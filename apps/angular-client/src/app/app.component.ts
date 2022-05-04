@@ -33,7 +33,7 @@ export class AppComponent implements OnInit {
       ],
       authority.publicKey,
       authority
-    );
+    ).start();
 
     from(transactionProcessorService).subscribe(({ context, value }) =>
       console.log({ context, value })

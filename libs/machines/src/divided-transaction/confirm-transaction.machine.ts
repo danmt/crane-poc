@@ -106,16 +106,24 @@ export const confirmTransactionMachine =
 
 export const confirmTransactionServiceFactory = (
   connection: Connection,
-  signature: TransactionSignature
+  signature: TransactionSignature,
+  config?: {
+    eager: boolean;
+    maxAttempts?: number;
+  }
 ) =>
   interpret(
     confirmTransactionMachine.withConfig(
-      {},
+      {
+        guards: {
+          'auto start enabled': () => config?.eager ?? false,
+        },
+      },
       {
         connection,
         signature,
         attempt: 0,
-        maxAttempts: 10,
+        maxAttempts: config?.maxAttempts ?? 10,
       }
     )
-  ).start();
+  );

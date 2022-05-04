@@ -6,23 +6,15 @@ import {
   TransactionInstruction,
   TransactionSignature,
 } from '@solana/web3.js';
-import { inspect } from '@xstate/inspect';
-import { v4 as uuid } from 'uuid';
 import { interpret } from 'xstate';
 import { createModel } from 'xstate/lib/model';
-import { confirmTransactionMachine } from './confirm-transaction.machine';
-import { createTransactionMachine } from './create-transaction.machine';
-import { sendTransactionMachine } from './send-transaction.machine';
+import { confirmTransactionServiceFactory } from './confirm-transaction.machine';
+import { createTransactionServiceFactory } from './create-transaction.machine';
+import { sendTransactionServiceFactory } from './send-transaction.machine';
 import {
-  signTransactionMachine,
   signTransactionModel,
+  signTransactionServiceFactory,
 } from './sign-transaction.machine';
-
-inspect({
-  // options
-  // url: 'https://stately.ai/viz?inspect', // (default)
-  iframe: false, // open in new window,
-});
 
 export const transactionProcessorModel = createModel(
   {},
@@ -128,24 +120,11 @@ export const transactionProcessorServiceFactory = (
     transactionProcessorMachine.withConfig({
       services: {
         'Create transaction machine': () => (send) => {
-          const machine = interpret(
-            createTransactionMachine.withConfig(
-              {
-                guards: {
-                  'auto build enabled': () => true,
-                  'auto start enabled': () => true,
-                },
-              },
-              {
-                connection,
-                id: uuid(),
-                createdAt: Date.now(),
-                instructions,
-                feePayer,
-                latestBlockhash: undefined,
-                transaction: undefined,
-              }
-            )
+          const machine = createTransactionServiceFactory(
+            connection,
+            feePayer,
+            instructions,
+            { eager: true, autoBuild: true }
           )
             .start()
             .onTransition(({ context, done }) => {
@@ -163,18 +142,9 @@ export const transactionProcessorServiceFactory = (
           };
         },
         'Sign transaction machine': (_, event) => (send) => {
-          const machine = interpret(
-            signTransactionMachine.withConfig(
-              {
-                guards: {
-                  'auto start enabled': () => true,
-                },
-              },
-              {
-                transaction: event.value,
-              }
-            )
-          )
+          const machine = signTransactionServiceFactory(event.value, {
+            eager: true,
+          })
             .start()
             .onTransition(({ context, done }) => {
               if (done && context.transaction !== undefined) {
@@ -193,19 +163,10 @@ export const transactionProcessorServiceFactory = (
           };
         },
         'Send transaction machine': (_, event) => (send) => {
-          const machine = interpret(
-            sendTransactionMachine.withConfig(
-              {
-                guards: {
-                  'auto start enabled': () => true,
-                },
-              },
-              {
-                connection,
-                transaction: event.value,
-                signature: undefined,
-              }
-            )
+          const machine = sendTransactionServiceFactory(
+            connection,
+            event.value,
+            { eager: true }
           )
             .start()
             .onTransition(({ context, done }) => {
@@ -223,20 +184,12 @@ export const transactionProcessorServiceFactory = (
           };
         },
         'Confirm transaction machine': (_, event) => (send) => {
-          const machine = interpret(
-            confirmTransactionMachine.withConfig(
-              {
-                guards: {
-                  'auto start enabled': () => true,
-                },
-              },
-              {
-                connection,
-                signature: event.value,
-                attempt: 0,
-                maxAttempts: 10,
-              }
-            )
+          const machine = confirmTransactionServiceFactory(
+            connection,
+            event.value,
+            {
+              eager: true,
+            }
           )
             .start()
             .onTransition(({ context, done }) => {
@@ -254,8 +207,5 @@ export const transactionProcessorServiceFactory = (
           };
         },
       },
-    }),
-    {
-      devTools: true,
-    }
-  ).start();
+    })
+  );

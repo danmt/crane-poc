@@ -86,11 +86,16 @@ export const sendTransactionMachine =
 
 export const sendTransactionServiceFactory = (
   connection: Connection,
-  transaction: Transaction
+  transaction: Transaction,
+  config?: { eager: boolean }
 ) =>
   interpret(
     sendTransactionMachine.withConfig(
-      {},
+      {
+        guards: {
+          'auto start enabled': () => config?.eager ?? false,
+        },
+      },
       { connection, transaction, signature: undefined }
     )
-  ).start();
+  );

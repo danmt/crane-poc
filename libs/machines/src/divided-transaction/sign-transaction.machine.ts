@@ -86,5 +86,17 @@ export const signTransactionMachine =
     }
   );
 
-export const signTransactionServiceFactory = (transaction: Transaction) =>
-  interpret(signTransactionMachine.withConfig({}, { transaction })).start();
+export const signTransactionServiceFactory = (
+  transaction: Transaction,
+  config?: { eager: boolean }
+) =>
+  interpret(
+    signTransactionMachine.withConfig(
+      {
+        guards: {
+          'auto start enabled': () => config?.eager ?? false,
+        },
+      },
+      { transaction }
+    )
+  );

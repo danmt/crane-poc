@@ -140,11 +140,20 @@ export const createTransactionMachine =
 export const createTransactionServiceFactory = (
   connection: Connection,
   feePayer: PublicKey,
-  instructions: TransactionInstruction[]
+  instructions: TransactionInstruction[],
+  config?: {
+    eager: boolean;
+    autoBuild: boolean;
+  }
 ) =>
   interpret(
     createTransactionMachine.withConfig(
-      {},
+      {
+        guards: {
+          'auto build enabled': () => config?.autoBuild ?? false,
+          'auto start enabled': () => config?.eager ?? false,
+        },
+      },
       {
         connection,
         id: uuid(),
@@ -155,4 +164,4 @@ export const createTransactionServiceFactory = (
         transaction: undefined,
       }
     )
-  ).start();
+  );
