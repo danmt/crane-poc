@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { Connection, Keypair, SystemProgram } from '@solana/web3.js';
 import {
-  transactionProcessorModel,
-  transactionProcessorServiceFactory,
-} from '@xstate/machines';
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  SystemProgram,
+} from '@solana/web3.js';
+import { transactionProcessorServiceFactory } from '@xstate/machines';
 import { from } from 'rxjs';
 import { environment } from '../environments/environment';
 
@@ -26,18 +28,15 @@ export class AppComponent implements OnInit {
         SystemProgram.transfer({
           fromPubkey: authority.publicKey,
           toPubkey: Keypair.generate().publicKey,
-          lamports: 1,
+          lamports: 0.1 * LAMPORTS_PER_SOL,
         }),
       ],
-      authority.publicKey
+      authority.publicKey,
+      authority
     );
 
     from(transactionProcessorService).subscribe(({ context, value }) =>
       console.log({ context, value })
-    );
-
-    transactionProcessorService.send(
-      transactionProcessorModel.events.createTransaction()
     );
   }
 }

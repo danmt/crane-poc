@@ -1,12 +1,22 @@
-import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js';
-import { inspect } from '@xstate/inspect';
-import { ActorRefFrom, assign, interpret, send, spawn } from 'xstate';
-import { createModel } from 'xstate/lib/model';
-import { blockhashCheckerMachine } from './blockhash-checker.machine';
 import {
-  createTransactionMachine,
-  createTransactionModel,
-} from './create-transaction.machine';
+  Connection,
+  Keypair,
+  PublicKey,
+  Transaction,
+  TransactionInstruction,
+  TransactionSignature,
+} from '@solana/web3.js';
+import { inspect } from '@xstate/inspect';
+import { v4 as uuid } from 'uuid';
+import { interpret } from 'xstate';
+import { createModel } from 'xstate/lib/model';
+import { confirmTransactionMachine } from './confirm-transaction.machine';
+import { createTransactionMachine } from './create-transaction.machine';
+import { sendTransactionMachine } from './send-transaction.machine';
+import {
+  signTransactionMachine,
+  signTransactionModel,
+} from './sign-transaction.machine';
 
 inspect({
   // options
@@ -15,121 +25,237 @@ inspect({
 });
 
 export const transactionProcessorModel = createModel(
-  {
-    createTransaction: undefined as
-      | ActorRefFrom<typeof createTransactionMachine>
-      | undefined,
-    blockhashChecker: undefined as
-      | ActorRefFrom<typeof blockhashCheckerMachine>
-      | undefined,
-  },
+  {},
   {
     events: {
       createTransaction: () => ({}),
+      transactionCreated: (value: Transaction) => ({ value }),
+      transactionSigned: (value: Transaction) => ({ value }),
+      transactionSent: (value: TransactionSignature) => ({ value }),
+      transactionConfirmed: (value: TransactionSignature) => ({ value }),
     },
   }
 );
 
-export type TransactionProcessorMachineServices = {
-  'Creating transaction': {
-    data: any;
-  };
-};
-
 export const transactionProcessorMachine =
-  /** @xstate-layout N4IgpgJg5mDOIC5QBUBOBDAdrdBjALgJYD2mABAAqrG5yzGpkCyeAFoZmAHQCSEANmADEuVGHT4waLDgIlMiUAAdisQkVKKQAD0QBaACwBWAAxcAHAHYTARgDMRgGyO7jqwYA0IAJ76b5xy4ATmMbIyDnI3MAJidHAF94r2lsPA1yKho6BmY2Dm4AYTEJDigyFNl0oS0VNXStXQRokwMuR0sokxigy0to2M8ffWj7LgMHEP9HCPMAxOSMVLlSSmpaWHpGFlx2Ti4AMQ5CWF2y-EXK+TJRcSqa1XV5BsQ7aMDo63MgsKCrUyCjF5fAg9NE2o4uuMTA4XADzIkkiBMMQIHAtBU0ldMutNrkdvleAIwPc6k8kDp9I4bEEuDZonZ7EE7BEDCEgkC-ACuB8giZLO0vk43vMQBjlhk1tktnk9kVbqVyhdMZpybVHirQI09DY6RYjEYDDFzC0eqZzByQf47MFPgb+T1zKzoiKxelVlkNjltrtuABlQhQTAK84yZUKVUPerkxpmrgmaEmXl0hkmRwGRwW7UGMEsqH6yzUkzOxGurGSz3S-F7Q5Bk7BpXi67FKPKSNkzWU61BX6WYz82zRY12C2vCwON4GuzG1n8l0Nt3YqV4n0k9XhjsgtPW5OM5lptmZweBcbhVzZwcdOx2BHxIA */
-  transactionProcessorModel.createMachine({
-    tsTypes: {} as import('./transaction-processor.machine.typegen').Typegen0,
-    schema: { services: {} as TransactionProcessorMachineServices },
-    id: 'Transaction Processor Machine',
-    initial: 'Idle',
-    states: {
-      Idle: {
-        on: {
-          createTransaction: {
-            actions: [
-              'Spawn create transaction machine',
-              'Start creating transaction',
-            ],
+  /** @xstate-layout N4IgpgJg5mDOIC5QBUBOBDAdrdBjALgJYD2mABAAqrG5yzGpkCyeAFoZmAHQCSEANmADEuVGHT4waLDgIlMiUAAdisQkVKKQAD0QBaAGwAGA1wCcAVgMAWAExnrZgBxOzBiwBoQAT322jAOxc1gCMRpYhYU4B1lYWAL7xXtLYeBrkVDR0DMxsHNx8gkJaKmrpWroIeqEAzFy2Fg6OIS4BAQ5evlW2TkZcNQbOIRb2sdZONQlJICmy6ZTUtLD0jCy47JxcAMJiEhxQZLNp8kL4GKlypDvikhAlquryFfoG-lxGTgYDFhYhNdZGawGTqICxOfpuAIhZyfAETJyJZLnObyBZZZY5NYbbgAZUIUEw+zIZxkx1Ip2RZMweIJkHuZSeSB0LxqfSMkVZZlsdlsAVcIIQdjMXACRnZthqNVs9gcIQMiJmlMuGUW2VWeU2OLAmAgRJJF3SFNJyq1mHw9MemiZlWs1i40Ta4oaBhCUOBPkQ3NM7l+gT57QsUKmSON80ySxWuXW+W2pAAZoRUABbPVKw36lFXeOJpN0pmlS0Ka2eoKhEb2GwWGqWNwCvQhaxBHoxf7OR3+eUKzDECBwLRHZVoiOYjUFARgC3lYtVRp9CaOGrRVu2P51+zg2wGAJgszV1kDBUDsOqjHq6Oba57TAHI+M5QPKegSqGVxcF27mpBrnDAJ1yJBME7CMX4HAlPkEWmW9SCHNUo2xLgaUJa9iTTO8QALR9mSqAwnBCN9nXCaUnBXKwBRXPoAR+V5eglHoJkPVDoPDWCsRjU1dWQjMqUnNDnxqPD2gCfjN3XKwJhqAVQibMUwn8aFrClWwGNDVFmNPOCYy2bNk1TFSrXvBl9Kw6o8OhAIK03aIVylMjhXCYiYiMfjLHA4NFT0lV0UjVjNig8hcG03M7nzB9eNBcxeXMgZdzlWVbDXT57UGYj3FiQFuRqZSDVUk9vNHHijOfKE6nfSUvxI38PSqT88M3bdZS3FpASmRIgA */
+  transactionProcessorModel.createMachine(
+    {
+      tsTypes: {} as import('./transaction-processor.machine.typegen').Typegen0,
+      id: 'Transaction Processor Machine',
+      initial: 'Idle',
+      states: {
+        Idle: {
+          always: {
+            cond: 'auto start enabled',
             target: 'Creating Transaction',
           },
+          on: {
+            createTransaction: {
+              target: 'Creating Transaction',
+            },
+          },
         },
-      },
-      'Creating Transaction': {
-        always: {
-          actions: 'Finish transaction creation',
-          cond: 'creating transaction',
-          target: 'Finishing transaction creation',
+        'Creating Transaction': {
+          invoke: {
+            src: 'Create transaction machine',
+          },
+          on: {
+            transactionCreated: {
+              actions: 'Transaction created',
+              target: 'Signing transaction',
+            },
+          },
         },
-      },
-      'Signing transaction': {},
-      'Finishing transaction creation': {
-        always: {
-          cond: 'transaction created',
-          target: 'Signing transaction',
+        'Signing transaction': {
+          invoke: {
+            src: 'Sign transaction machine',
+          },
+          on: {
+            transactionSigned: {
+              actions: 'Transaction signed',
+              target: 'Sending transaction',
+            },
+          },
+        },
+        'Sending transaction': {
+          invoke: {
+            src: 'Send transaction machine',
+          },
+          on: {
+            transactionSent: {
+              actions: 'Transaction sent',
+              target: 'Confirming transaction',
+            },
+          },
+        },
+        'Confirming transaction': {
+          invoke: {
+            src: 'Confirm transaction machine',
+          },
+          on: {
+            transactionConfirmed: {
+              actions: 'Transaction confirmed',
+              target: 'Transaction confirmed',
+            },
+          },
+        },
+        'Transaction confirmed': {
+          type: 'final',
         },
       },
     },
-  });
+    {
+      actions: {
+        'Transaction created': () => {},
+        'Transaction signed': () => {},
+        'Transaction sent': () => {},
+        'Transaction confirmed': () => {},
+      },
+      guards: {
+        'auto start enabled': () => true,
+      },
+    }
+  );
 
 export const transactionProcessorServiceFactory = (
   connection: Connection,
   instructions: TransactionInstruction[],
-  feePayer: PublicKey
+  feePayer: PublicKey,
+  signer: Keypair
 ) =>
   interpret(
     transactionProcessorMachine.withConfig({
-      actions: {
-        'Spawn create transaction machine': assign({
-          createTransaction: (_) => {
-            return spawn(
-              createTransactionMachine.withConfig({
-                services: {
-                  'Fetch latest blockhash': () =>
-                    connection.getLatestBlockhash(),
-                },
-              }),
+      services: {
+        'Create transaction machine': () => (send) => {
+          const machine = interpret(
+            createTransactionMachine.withConfig(
               {
-                name: 'createTransaction',
-                sync: true,
+                guards: {
+                  'auto build enabled': () => true,
+                  'auto start enabled': () => true,
+                },
+              },
+              {
+                connection,
+                id: uuid(),
+                createdAt: Date.now(),
+                instructions,
+                feePayer,
+                latestBlockhash: undefined,
+                transaction: undefined,
               }
-            );
-          },
-        }),
-        'Start creating transaction': send(
-          createTransactionModel.events.createTransaction({
-            feePayer,
-            instructions,
-          }),
-          { to: 'createTransaction' }
-        ),
-        'Finish transaction creation': send(
-          createTransactionModel.events.buildTransaction(),
-          {
-            to: 'createTransaction',
-          }
-        ),
-      },
-      guards: {
-        'transaction created': (context) => {
-          const snapshot = context.createTransaction?.getSnapshot();
+            )
+          )
+            .start()
+            .onTransition(({ context, done }) => {
+              if (done && context.transaction !== undefined) {
+                send(
+                  transactionProcessorModel.events.transactionCreated(
+                    context.transaction
+                  )
+                );
+              }
+            });
 
-          if (snapshot === undefined) {
-            return false;
-          }
-
-          return snapshot.value === 'Transaction Created';
+          return () => {
+            machine.stop();
+          };
         },
-        'creating transaction': (context) => {
-          const snapshot = context.createTransaction?.getSnapshot();
+        'Sign transaction machine': (_, event) => (send) => {
+          const machine = interpret(
+            signTransactionMachine.withConfig(
+              {
+                guards: {
+                  'auto start enabled': () => true,
+                },
+              },
+              {
+                transaction: event.value,
+              }
+            )
+          )
+            .start()
+            .onTransition(({ context, done }) => {
+              if (done && context.transaction !== undefined) {
+                send(
+                  transactionProcessorModel.events.transactionSigned(
+                    context.transaction
+                  )
+                );
+              }
+            });
 
-          if (snapshot === undefined) {
-            return false;
-          }
+          machine.send(signTransactionModel.events.partialSign(signer));
 
-          return snapshot.value === 'Creating transaction';
+          return () => {
+            machine.stop();
+          };
+        },
+        'Send transaction machine': (_, event) => (send) => {
+          const machine = interpret(
+            sendTransactionMachine.withConfig(
+              {
+                guards: {
+                  'auto start enabled': () => true,
+                },
+              },
+              {
+                connection,
+                transaction: event.value,
+                signature: undefined,
+              }
+            )
+          )
+            .start()
+            .onTransition(({ context, done }) => {
+              if (done && context.signature !== undefined) {
+                send(
+                  transactionProcessorModel.events.transactionSent(
+                    context.signature
+                  )
+                );
+              }
+            });
+
+          return () => {
+            machine.stop();
+          };
+        },
+        'Confirm transaction machine': (_, event) => (send) => {
+          const machine = interpret(
+            confirmTransactionMachine.withConfig(
+              {
+                guards: {
+                  'auto start enabled': () => true,
+                },
+              },
+              {
+                connection,
+                signature: event.value,
+                attempt: 0,
+                maxAttempts: 10,
+              }
+            )
+          )
+            .start()
+            .onTransition(({ context, done }) => {
+              if (done && context.signature !== undefined) {
+                send(
+                  transactionProcessorModel.events.transactionConfirmed(
+                    context.signature
+                  )
+                );
+              }
+            });
+
+          return () => {
+            machine.stop();
+          };
         },
       },
     }),
-    { devTools: true }
+    {
+      devTools: true,
+    }
   ).start();

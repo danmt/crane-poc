@@ -10,9 +10,10 @@ import { createModel } from 'xstate/lib/model';
 
 export const createTransactionModel = createModel(
   {
-    id: undefined as string | undefined,
-    createdAt: undefined as number | undefined,
-    feePayer: undefined as PublicKey | undefined,
+    connection: new Connection('http://localhost:8899'),
+    id: 'default-id',
+    createdAt: Date.now(),
+    feePayer: PublicKey.default,
     instructions: [] as TransactionInstruction[],
     latestBlockhash: undefined as
       | {
@@ -45,7 +46,7 @@ export type CreateTransactionMachineServices = {
 };
 
 export const createTransactionMachine =
-  /** @xstate-layout N4IgpgJg5mDOIC5QGEBOYCGAXMACAKqhgHawYDGWAlgPbG4CyFAFlcWAHQCSEANmAGJy6bGEIkylWsUSgADjVhVqdWSAAeiALQBOAAwBWDjoMA2faYDMeywBYAjAA4DAGhABPbfYDsAJg6++t4m3qGOjvYAvpFuaJg4BESkFCr0TOSs7BwAYmBYGWxQuLyisFi4AEa8NOQA1swYsMwCEHScbABuNLWccaKJEinSjCxsnLn5mUUlOGWV1XUNTQidNdjSANp6ALpqCkqpapoIWnY6HI565nq2BpaOob4Pbp4n9r5GwXoROpbepnodDpHL5orERAlxMkpHQRgUshN4dNSuUqjV6o1mmBUKgaKgOHIZgAzPEAWw4fUhSUkqThmXGeSRxRR83RS2YK2IXXI6zoW12SBA+2U0iO2lMgQ49nMDglBj0vicrg82l8EqlIJ+728TkcOlMYJAlLwUJpw3S9IpEMKuCw1KGdAEsDyuTAAAUMO5sXtFCLVILjlpghxvFc9ZZTI4rP9TMrXlp7CYAkEo5YdImJVdDcaBtDaRaxlb4ja7YMYcQnXkuKQ7QBXcvwQXCw4B7RRi5mKOR2x6YIfXwvbSWfzfK7eAz-HuWYc6bMQk328t0wuUkuL1ICCq1qi8CCmh0yJu+lugY72WymDimSOA3w2C-vWzeQdvaUhlOmUMGRW+byOaIxCAxA0BAcBqDm+5LgWWQ8PwPoHKKrZvDc9jGGY+hXKYtgWC+CaSl8ES9vqBj2PY9xzvEC5lvmowIoyUzMrMqILBiTTwX6h6nuKDhoeY1gGDooTYY4uFkd477fJY9gGAYlw6tJFH9JBNHwr01rEEUpZ5oh8jHjpGhtrYHC2BEeqyb2oRAnGXg2Mm3xqg4ji2GmtyKVS1HmrRnDKcMxoQOxJ4GQgF6XpYMmyfxNySaJtmBN8BgXsCejSX+blUdpsLQWAAX6YG9hXEYJjXJh2FXLh05GE4Txke8E7XrYAGREAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QGEBOYCGAXMACAKqhgHawYDGWAlgPbG4CyFAFlcWAHQCSEANmAGJy6bGEIkylWsUSgADjVhVqdWSAAeiALQBOAMx6OABgAcARgBsAFgtmbOgExWdAGhABPbVbMcnAVj8TIz0jP1sdKwB2AF9otzRMHAIiUgoVeiZyVnZuPkE1BSV0tU0ELUjLDj8rBzsLCx0LIx1zN08yhxCOK2ao0z8zPz0rMNj4kSTxVKk6RhY2TgAxMCwstihcXlFYLFwAI14acgBrZgxYZgEIOk42ADcaY84E0WSJNOk5tZzl1eyNrY4Hb7Q4nM4XBD3I7YaQAbSMAF0CoplNISto9BZDJjHA4HJEnGYnCY2l4fP5AmY9CZhrZLGMQC9JilJOkvtklitvgDtrsDkdTudLmBUKgaKgOHJAQAzcUAWw4TLwU1Zn0yHI4v25m15IIF4OYkOID3IMLo8KRSBAhVRqitpS0NT8HEiBj8kSdzSCflJHQcRiqOjqQaxkT8+JMDKVb2mbPVC0VE3WuCwLI+dAEsBWyzAAAUMO4Rciimj7dozEYLBwaZZwkZTHohmZfVozJFIhwLH5GhYw0Mu0MrFGJsq0zMMvMckzk6n3uPMysuKRUwBXcfwK024plspmKkcFqWSsWEw1Fqn306KoV3veHQRIwOEwVYeJUdzuOT55J4gbWex6QBD2FcqF4CAVXTGRNxRbdQFKNsqxpR8Q0rMwg0iCwWzsHwByJetrEiEw8VfV4IPHdkE2nX8UzHdIBGLW0oLgxBagDJpw2qAxG1DH0PG0WoXRGd173rRtmh0WI4hAYgaAgOA1GjMjP2+TgeH4BjYI0bQTB0Z1nDQmoMK7Klmz4jojA7bs6iGesMPMCwSOZD81S-TUuX+HUgT5UFBQuDTS2YsoGj0swiKxAwWgsfEsNCKodMGLtCL0Rpqkc98ANmeMpx-P9aIC60YPyh0mgPV16hpD0aW7SIW1sTt7yiawAlEhxrDSmNVUy1ylM+JUIH8u1AucEwD1CXtCICLEdErFtnw4NCInbV0917Gl2p6rqVIGpitLKXSO1MSwbGDJxXDMrQQkMHoIgCEZQjCodJKAA */
   createTransactionModel.createMachine(
     {
       context: createTransactionModel.initialContext,
@@ -55,9 +56,12 @@ export const createTransactionMachine =
       initial: 'Idle',
       states: {
         Idle: {
+          always: {
+            cond: 'auto start enabled',
+            target: 'Fetching latest blockhash',
+          },
           on: {
             createTransaction: {
-              actions: 'Generate id and save in memory',
               target: 'Fetching latest blockhash',
             },
           },
@@ -79,6 +83,10 @@ export const createTransactionMachine =
           },
         },
         'Creating transaction': {
+          always: {
+            cond: 'auto build enabled',
+            target: 'Transaction Created',
+          },
           on: {
             setFeePayer: {
               actions: 'Save fee payer in memory',
@@ -87,24 +95,18 @@ export const createTransactionMachine =
               actions: 'Save instructions in memory',
             },
             buildTransaction: {
-              actions: 'Generate transaction and save in memory',
               target: 'Transaction Created',
             },
           },
         },
         'Transaction Created': {
+          entry: 'Generate transaction and save in memory',
           type: 'final',
         },
       },
     },
     {
       actions: {
-        'Generate id and save in memory': assign({
-          id: (_) => uuid(),
-          createdAt: (_) => Date.now(),
-          instructions: (_, event) => event.value.instructions ?? [],
-          feePayer: (_, event) => event.value.feePayer,
-        }),
         'Save fee payer in memory': assign({
           feePayer: (_, event) => event.value,
         }),
@@ -123,50 +125,34 @@ export const createTransactionMachine =
               recentBlockhash: context.latestBlockhash?.blockhash,
             }).add(...context.instructions),
         }),
+      },
+      services: {
+        'Fetch latest blockhash': ({ connection }) =>
+          connection.getLatestBlockhash(),
+      },
+      guards: {
+        'auto build enabled': () => false,
+        'auto start enabled': () => false,
       },
     }
   );
 
-export const createTransactionServiceFactory = (connection: Connection) =>
+export const createTransactionServiceFactory = (
+  connection: Connection,
+  feePayer: PublicKey,
+  instructions: TransactionInstruction[]
+) =>
   interpret(
-    createTransactionMachine.withConfig({
-      services: {
-        'Fetch latest blockhash': () => connection.getLatestBlockhash(),
-      },
-    })
+    createTransactionMachine.withConfig(
+      {},
+      {
+        connection,
+        id: uuid(),
+        createdAt: Date.now(),
+        instructions,
+        feePayer,
+        latestBlockhash: undefined,
+        transaction: undefined,
+      }
+    )
   ).start();
-
-/* export const createTransactionServiceFactory = (connection: Connection) =>
-  interpret(
-    createTransactionMachine.withConfig({
-      actions: {
-        'Generate id and save in memory': assign({
-          id: (_) => uuid(),
-          createdAt: (_) => Date.now(),
-          instructions: (_, event) => event.value.instructions ?? [],
-          feePayer: (_, event) => event.value.feePayer,
-        }),
-        'Save fee payer in memory': assign({
-          feePayer: (_, event) => event.value,
-        }),
-        'Save instructions in memory': assign({
-          instructions: (_, event) => event.value,
-        }),
-        'Notify fetch latest blockhash error': (_, event) =>
-          console.error(event.data),
-        'Save latest blockhash in memory': assign({
-          latestBlockhash: (_, event) => event.data,
-        }),
-        'Generate transaction and save in memory': assign({
-          transaction: (context) =>
-            new Transaction({
-              feePayer: context.feePayer,
-              recentBlockhash: context.latestBlockhash?.blockhash,
-            }).add(...context.instructions),
-        }),
-      },
-      services: {
-        'Fetch latest blockhash': () => connection.getLatestBlockhash(),
-      },
-    })
-  ).start(); */

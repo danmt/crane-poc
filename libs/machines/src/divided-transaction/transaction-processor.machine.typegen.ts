@@ -3,34 +3,47 @@
 export interface Typegen0 {
   '@@xstate/typegen': true;
   eventsCausingActions: {
-    'Spawn create transaction machine': 'createTransaction';
-    'Start creating transaction': 'createTransaction';
-    'Finish transaction creation': '';
+    'Transaction created': 'transactionCreated';
+    'Transaction signed': 'transactionSigned';
+    'Transaction sent': 'transactionSent';
+    'Transaction confirmed': 'transactionConfirmed';
   };
   internalEvents: {
     '': { type: '' };
     'xstate.init': { type: 'xstate.init' };
   };
-  invokeSrcNameMap: {};
+  invokeSrcNameMap: {
+    'Create transaction machine': 'done.invoke.Transaction Processor Machine.Creating Transaction:invocation[0]';
+    'Sign transaction machine': 'done.invoke.Transaction Processor Machine.Signing transaction:invocation[0]';
+    'Send transaction machine': 'done.invoke.Transaction Processor Machine.Sending transaction:invocation[0]';
+    'Confirm transaction machine': 'done.invoke.Transaction Processor Machine.Confirming transaction:invocation[0]';
+  };
   missingImplementations: {
-    actions:
-      | 'Spawn create transaction machine'
-      | 'Start creating transaction'
-      | 'Finish transaction creation';
-    services: never;
-    guards: 'creating transaction' | 'transaction created';
+    actions: never;
+    services:
+      | 'Create transaction machine'
+      | 'Sign transaction machine'
+      | 'Send transaction machine'
+      | 'Confirm transaction machine';
+    guards: never;
     delays: never;
   };
-  eventsCausingServices: {};
+  eventsCausingServices: {
+    'Create transaction machine': 'createTransaction' | '';
+    'Sign transaction machine': 'transactionCreated';
+    'Send transaction machine': 'transactionSigned';
+    'Confirm transaction machine': 'transactionSent';
+  };
   eventsCausingGuards: {
-    'creating transaction': '';
-    'transaction created': '';
+    'auto start enabled': '';
   };
   eventsCausingDelays: {};
   matchesStates:
     | 'Idle'
     | 'Creating Transaction'
     | 'Signing transaction'
-    | 'Finishing transaction creation';
+    | 'Sending transaction'
+    | 'Confirming transaction'
+    | 'Transaction confirmed';
   tags: never;
 }

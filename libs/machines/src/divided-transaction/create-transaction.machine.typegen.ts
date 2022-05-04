@@ -3,12 +3,11 @@
 export interface Typegen0 {
   '@@xstate/typegen': true;
   eventsCausingActions: {
-    'Generate id and save in memory': 'createTransaction';
     'Save latest blockhash in memory': 'done.invoke.Create Transaction Machine.Fetching latest blockhash:invocation[0]';
     'Notify fetch latest blockhash error': 'error.platform.Create Transaction Machine.Fetching latest blockhash:invocation[0]';
     'Save fee payer in memory': 'setFeePayer';
     'Save instructions in memory': 'setInstructions';
-    'Generate transaction and save in memory': 'buildTransaction';
+    'Generate transaction and save in memory': 'buildTransaction' | '';
   };
   internalEvents: {
     'done.invoke.Create Transaction Machine.Fetching latest blockhash:invocation[0]': {
@@ -20,6 +19,7 @@ export interface Typegen0 {
       type: 'error.platform.Create Transaction Machine.Fetching latest blockhash:invocation[0]';
       data: unknown;
     };
+    '': { type: '' };
     'xstate.init': { type: 'xstate.init' };
   };
   invokeSrcNameMap: {
@@ -27,14 +27,17 @@ export interface Typegen0 {
   };
   missingImplementations: {
     actions: never;
-    services: 'Fetch latest blockhash';
+    services: never;
     guards: never;
     delays: never;
   };
   eventsCausingServices: {
-    'Fetch latest blockhash': 'createTransaction';
+    'Fetch latest blockhash': 'createTransaction' | '';
   };
-  eventsCausingGuards: {};
+  eventsCausingGuards: {
+    'auto start enabled': '';
+    'auto build enabled': '';
+  };
   eventsCausingDelays: {};
   matchesStates:
     | 'Idle'

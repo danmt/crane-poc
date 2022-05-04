@@ -3,7 +3,6 @@
 export interface Typegen0 {
   '@@xstate/typegen': true;
   eventsCausingActions: {
-    'Save signature in memory': 'confirmTransaction';
     'Notify confirm transaction error': 'error.platform.Confirm Transaction Machine.Confirming transaction:invocation[0]';
     'Increase number of attempts': 'error.platform.Confirm Transaction Machine.Confirming transaction:invocation[0]';
   };
@@ -12,6 +11,7 @@ export interface Typegen0 {
       type: 'error.platform.Confirm Transaction Machine.Confirming transaction:invocation[0]';
       data: unknown;
     };
+    '': { type: '' };
     'xstate.after(30000)#Confirm Transaction Machine.Sleeping': {
       type: 'xstate.after(30000)#Confirm Transaction Machine.Sleeping';
     };
@@ -21,20 +21,19 @@ export interface Typegen0 {
     'Confirm transaction': 'done.invoke.Confirm Transaction Machine.Confirming transaction:invocation[0]';
   };
   missingImplementations: {
-    actions:
-      | 'Save signature in memory'
-      | 'Notify confirm transaction error'
-      | 'Increase number of attempts';
-    services: 'Confirm transaction';
-    guards: 'can try again';
+    actions: never;
+    services: never;
+    guards: never;
     delays: never;
   };
   eventsCausingServices: {
     'Confirm transaction':
       | 'confirmTransaction'
+      | ''
       | 'xstate.after(30000)#Confirm Transaction Machine.Sleeping';
   };
   eventsCausingGuards: {
+    'auto start enabled': '';
     'can try again': 'xstate.after(30000)#Confirm Transaction Machine.Sleeping';
   };
   eventsCausingDelays: {};

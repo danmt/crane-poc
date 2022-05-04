@@ -5,7 +5,6 @@ export interface Typegen0 {
   eventsCausingActions: {
     'Add signature to transaction': 'partialSign';
     'Notify invalid signer error': 'partialSign';
-    'Save transaction in memory': 'signTransaction';
   };
   internalEvents: {
     '': { type: '' };
@@ -13,18 +12,16 @@ export interface Typegen0 {
   };
   invokeSrcNameMap: {};
   missingImplementations: {
-    actions:
-      | 'Add signature to transaction'
-      | 'Notify invalid signer error'
-      | 'Save transaction in memory';
+    actions: never;
     services: never;
-    guards: 'valid signer' | 'signatures verified';
+    guards: never;
     delays: never;
   };
   eventsCausingServices: {};
   eventsCausingGuards: {
     'valid signer': 'partialSign';
     'signatures verified': '';
+    'auto start enabled': '';
   };
   eventsCausingDelays: {};
   matchesStates: 'Signing transaction' | 'Transaction Signed' | 'Idle';

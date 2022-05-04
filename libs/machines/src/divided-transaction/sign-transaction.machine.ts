@@ -4,7 +4,7 @@ import { createModel } from 'xstate/lib/model';
 
 export const signTransactionModel = createModel(
   {
-    transaction: undefined as Transaction | undefined,
+    transaction: new Transaction(),
   },
   {
     events: {
@@ -15,50 +15,48 @@ export const signTransactionModel = createModel(
 );
 
 export const signTransactionMachine =
-  /** @xstate-layout N4IgpgJg5mDOIC5QGUCWUB2ACAKgJwEMNYCBjAF1QHtsBZMgC1QzADo1NmotzDizKNAMSJQAByqxUgjKJAAPRAFoAzADYALKw0BGAJwAGAKwGdADh361AJgA0IAJ6Jra1vvXGA7Cp0q9n0w0AXyD7Dmx8IhIKajpGZjZwrh4+aJkhMQI8SgIAG3C5CSkZOUUEHVcDNQMzT2sNDSNLHSq1eycEJR1rI1ZPMyN-T09zAxUzM2DQkHDcVIFYrHpSJhZWAEkIXLAhKUxI-hiaQslpWNLlFSMzVmsLIyM1NSM-HztHZXMVW50TZ5cBgZPEYQtMMFQIHA5LMDmlFstVol0BhkrwogtjkgQEUzpjQGVVC9WI87mMgU8DHodO1lNU+gN-EYNMY1GY1OoQmFkXN0Uc4isEqxYRjsOFICdiucsQSrt9fL8NHoVBoXOMzDTyiM3M8dMyDFVrpZPJyZtzhXylvE1ptthLcbJpZcWqw9CYVNYatZ-JSjBqlHdXMzrHcdHVzCrrCaYfMLQiEnaSo7OmrtPpjKYLFZ3h1CXptAZg8CGkX2aCgkA */
-  signTransactionModel.createMachine({
-    tsTypes: {} as import('./sign-transaction.machine.typegen').Typegen0,
-    initial: 'Idle',
-    states: {
-      'Signing transaction': {
-        always: {
-          cond: 'signatures verified',
-          target: 'Transaction Signed',
+  /** @xstate-layout N4IgpgJg5mDOIC5QGUCWUB2ACAKgJwEMNYCBjAF1QHtsBZMgC1QzADo1NmotzDizKNAMQAHAnkoEANhwyJQIqrFSC5SEAA9EANm2ttATgDMADiMGA7ACYAjAFZtNo3YA0IAJ6IAtDYAsN1ntdOxCTPwtfSIBfKLdZXD4SCmo6RmY2WS4eRIEUoXkQRWVVAq0ELyNtX1Z-AwAGOzqbMJsDbSs3TwQrPVbKhosjJ0sm3xi49Gx8IiTVLHpSJhZWAEkIKTAhZUxp-mSaAqKVFNLvI1tWSvrfKzqTXxN7zu9WutZ6ut9P27qrKzsjOMQPFdrMUvM0ss1ht8uojiV1GUvNo7IFfrcjNY2r5GiZnuUrBYDO90SZ2nYInUmjFYiAMFQIHACiCcvtUot0uxJlleDNcgc4UpjgLQEjnEZWA5CdYrL5DAZbr58V57qwIo5HpZtOZfkCWXy2RCOctQfzsLJIIchQjRWcAYEhnZfMYbtrHvibBYAjYUX4qXUUS0LHrJgkDXMFks2NCwFbiidEWcbG8DI1zncrCNU8qrGSaqTPbZ7n8Q5gw3sI5DY4L4yLNGdHjVXo1mjZWu1lc5iV8-vcjL5HUNtDSokA */
+  signTransactionModel.createMachine(
+    {
+      tsTypes: {} as import('./sign-transaction.machine.typegen').Typegen0,
+      initial: 'Idle',
+      states: {
+        'Signing transaction': {
+          always: {
+            cond: 'signatures verified',
+            target: 'Transaction Signed',
+          },
+          on: {
+            partialSign: [
+              {
+                actions: 'Add signature to transaction',
+                cond: 'valid signer',
+              },
+              {
+                actions: 'Notify invalid signer error',
+              },
+            ],
+          },
         },
-        on: {
-          partialSign: [
-            {
-              actions: 'Add signature to transaction',
-              cond: 'valid signer',
-            },
-            {
-              actions: 'Notify invalid signer error',
-            },
-          ],
+        'Transaction Signed': {
+          type: 'final',
         },
-      },
-      'Transaction Signed': {
-        type: 'final',
-      },
-      Idle: {
-        on: {
-          signTransaction: {
-            actions: 'Save transaction in memory',
+        Idle: {
+          always: {
+            cond: 'auto start enabled',
             target: 'Signing transaction',
+          },
+          on: {
+            signTransaction: {
+              target: 'Signing transaction',
+            },
           },
         },
       },
+      id: 'Sign Transaction Machine',
     },
-    id: 'Sign Transaction Machine',
-  });
-
-export const signTransactionServiceFactory = () =>
-  interpret(
-    signTransactionMachine.withConfig({
+    {
       actions: {
-        'Save transaction in memory': assign({
-          transaction: (_, event) => event.value,
-        }),
         'Add signature to transaction': assign({
           transaction: (context, event) => {
             context.transaction?.partialSign(event.value);
@@ -69,7 +67,7 @@ export const signTransactionServiceFactory = () =>
         'Notify invalid signer error': () => console.error('Invalid Signer'),
       },
       guards: {
-        'signatures verified': (context, _) =>
+        'signatures verified': (context) =>
           context.transaction?.verifySignatures() ?? false,
         'valid signer': (context, event) => {
           if (context.transaction === undefined) {
@@ -83,6 +81,10 @@ export const signTransactionServiceFactory = () =>
 
           return message.isAccountSigner(accountIndex);
         },
+        'auto start enabled': () => false,
       },
-    })
-  ).start();
+    }
+  );
+
+export const signTransactionServiceFactory = (transaction: Transaction) =>
+  interpret(signTransactionMachine.withConfig({}, { transaction })).start();

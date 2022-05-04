@@ -3,7 +3,6 @@
 export interface Typegen0 {
   '@@xstate/typegen': true;
   eventsCausingActions: {
-    'Save transaction in memory': 'sendTransaction';
     'Save signature in memory': 'done.invoke.Send Transaction Machine.Sending Transaction:invocation[0]';
     'Notify send transaction error': 'error.platform.Send Transaction Machine.Sending Transaction:invocation[0]';
   };
@@ -17,24 +16,24 @@ export interface Typegen0 {
       type: 'error.platform.Send Transaction Machine.Sending Transaction:invocation[0]';
       data: unknown;
     };
+    '': { type: '' };
     'xstate.init': { type: 'xstate.init' };
   };
   invokeSrcNameMap: {
     'Send transaction': 'done.invoke.Send Transaction Machine.Sending Transaction:invocation[0]';
   };
   missingImplementations: {
-    actions:
-      | 'Save transaction in memory'
-      | 'Save signature in memory'
-      | 'Notify send transaction error';
-    services: 'Send transaction';
+    actions: never;
+    services: never;
     guards: never;
     delays: never;
   };
   eventsCausingServices: {
-    'Send transaction': 'sendTransaction';
+    'Send transaction': 'sendTransaction' | '';
   };
-  eventsCausingGuards: {};
+  eventsCausingGuards: {
+    'auto start enabled': '';
+  };
   eventsCausingDelays: {};
   matchesStates:
     | 'Idle'
