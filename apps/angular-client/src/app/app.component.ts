@@ -5,7 +5,7 @@ import {
   LAMPORTS_PER_SOL,
   SystemProgram,
 } from '@solana/web3.js';
-import { transactionProcessorServiceFactory } from '@xstate/machines';
+import { transactionSenderServiceFactory } from '@xstate/machines';
 import { from } from 'rxjs';
 import { environment } from '../environments/environment';
 
@@ -22,7 +22,7 @@ export class AppComponent implements OnInit {
     const authority = Keypair.fromSecretKey(
       new Uint8Array(environment.authority)
     );
-    const transactionProcessorService = transactionProcessorServiceFactory(
+    const transactionSenderService = transactionSenderServiceFactory(
       connection,
       [
         SystemProgram.transfer({
@@ -35,8 +35,8 @@ export class AppComponent implements OnInit {
       authority
     ).start();
 
-    from(transactionProcessorService).subscribe(({ context, value }) =>
-      console.log({ context, value })
+    from(transactionSenderService).subscribe(({ context, value, event }) =>
+      console.log({ context, value, event })
     );
   }
 }

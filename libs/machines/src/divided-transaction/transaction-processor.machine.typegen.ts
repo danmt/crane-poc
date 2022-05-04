@@ -20,11 +20,7 @@ export interface Typegen0 {
   };
   missingImplementations: {
     actions: never;
-    services:
-      | 'Create transaction machine'
-      | 'Sign transaction machine'
-      | 'Send transaction machine'
-      | 'Confirm transaction machine';
+    services: never;
     guards: never;
     delays: never;
   };

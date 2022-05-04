@@ -75,8 +75,9 @@ export const sendTransactionMachine =
           console.error(event.data),
       },
       services: {
-        'Send transaction': ({ connection, transaction }) =>
-          connection.sendRawTransaction(transaction.serialize()),
+        'Send transaction': ({ connection, transaction }) => {
+          return connection.sendRawTransaction(transaction.serialize());
+        },
       },
       guards: {
         'auto start enabled': () => false,
