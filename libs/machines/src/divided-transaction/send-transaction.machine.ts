@@ -7,6 +7,7 @@ export const sendTransactionModel = createModel(
     connection: new Connection('http://localhost:8899'),
     transaction: new Transaction(),
     signature: undefined as TransactionSignature | undefined,
+    error: undefined as unknown,
   },
   {
     events: {
@@ -22,7 +23,7 @@ export type SendTransactionMachineServices = {
 };
 
 export const sendTransactionMachine =
-  /** @xstate-layout N4IgpgJg5mDOIC5QGUwDsIAIAqAnAhmrPgMYAuAlgPZqYCypAFhWmAHQCSEANmAMSx0EPIWLlqaRKAAOVWBUo0pIAB6IAtABZNADjYAGHQGYjAdnNH9AVgBMANjsAaEAE8NNzVbYeAjDs1GNqZ2RrY2RgC+Ec6oGDgERKSKtAwkzKycPPzKsvLJymoI6uEAnGx2OnYlppZGJTpWOqaazm5FJvrlOj4+mnbNOjr6DqZRMULxokkS9Ews7LEQLFCTieI0fBA07CwAblQA1gsTImvJs2nzbIvLq2LJCHtUJPjJANr6ALo5cgoSBe59KY2D4quEAlZqpUrKZWhoej42DobPVNM1TMiYboxiBFndpjQLuljhhbqd7hI+GBcLgqLg2NJuK8AGZ0gC21xOCQphNSxM5pLQK3JBLQjzQ+xe7y+Pzy-yQqg0uk05SCvT6DVMthhcIQ9jYVk01SBphsgx8Wp0UWiIDQVAgcGUeJF6xScwyXF4sr+SgVhS0RhVJX0Nh8gRCPhsMJsuvUJmBfh6ARRPn0wasOOd3NFRKuNyF+Nd3vyfqVJRVNjVVlsxjsHhKscjKsC9Vs+kCDTs2JtWamrtzGRd51iZGL8tA-p8JTKnn0ys84X8dh8utBXlTJR81cMpnqOhKma5ffOfKuQ5mADF8BReBAx76J0qauVGpogSi63WrKu7Ou01urB3PdBkPOJz15d0wHvSRSyKKw-G8KsayMOtdFjTRUxBbow1NfcRhKOxrQiIA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QGUwDsIAIAqAnAhmrPgMYAuAlgPZqYCypAFhWmAHQCSEANmAMSx0EPIWLlqaRKAAOVWBUo0pIAB6IAtAGZNATjYBWABwAWAAw7TANh0AmS3csAaEAE8NNm4bZXPHnYdMbHWDDAF9Q51QMHAIiUkVaBhJmVk4efmVZeQTlNQR1AEZNArYCwwB2S0NLU1MCnSNy-Wc3fOLNA0CCu2N9GybjXvDIoRjReIl6JhZ2KIgWKDG48Ro+CBp2FgA3KgBrWdGRZYSp5Jm2OYWlsQSEbaoSfASAbVMAXUy5BQlcjX82SzWHTGcqaGxlapGFp-YwA-SmQz9MoeUx9SzDEBza4TGinFIHDBXI43CR8MC4XBUXBsaTcJ4AMypAFsLodYiTcUl8azCWhFsScWg7mgdo8Xu9PtkfkhVBpNJVSv1DLpAgFTOVDNCEPpYd1LPpyvVEeUNcFwhEQGgqBA4MosQKVolpqkuLxJd8lDK8lo7GwzJ5evodNoDTYtT7TN4un4GqZNMqMfb2YK8edLnzsY73TkvXLDPo2OUlVUbL0i8YdOGCurSvDlQVQVVTMY7Im2eNHanUg6TlEyNnpaBvRY2A0CvVysYCoMTAatci2J5DA39PGzFPum3oj3JlzzjvcQAxfAUXgQAeeody-W1nTdQJGTT2ZquRALpcrtfN8dbrAHp1nKwF6SLm+RmHoRYaiWZalpWr5tMGUbggUQJPgUBrGOaoRAA */
   sendTransactionModel.createMachine(
     {
       tsTypes: {} as import('./send-transaction.machine.typegen').Typegen0,
@@ -51,7 +52,10 @@ export const sendTransactionMachine =
             ],
             onError: [
               {
-                actions: 'Notify send transaction error',
+                actions: [
+                  'Notify send transaction error',
+                  'Save error in memory',
+                ],
                 target: 'Transaction Failed',
               },
             ],
@@ -73,6 +77,9 @@ export const sendTransactionMachine =
         }),
         'Notify send transaction error': (_, event) =>
           console.error(event.data),
+        'Save error in memory': assign({
+          error: (_, event) => event.data,
+        }),
       },
       services: {
         'Send transaction': ({ connection, transaction }) => {
@@ -97,6 +104,6 @@ export const sendTransactionServiceFactory = (
           'auto start enabled': () => config?.eager ?? false,
         },
       },
-      { connection, transaction, signature: undefined }
+      { connection, transaction, signature: undefined, error: undefined }
     )
   );

@@ -6,7 +6,9 @@ export interface Typegen0 {
     'Transaction created': 'transactionCreated';
     'Transaction signed': 'transactionSigned';
     'Transaction sent': 'transactionSent';
+    'Transaction failed': 'transactionFailed';
     'Transaction confirmed': 'transactionConfirmed';
+    'Transaction not confirmed': 'transactionNotConfirmed';
   };
   internalEvents: {
     '': { type: '' };
@@ -40,6 +42,8 @@ export interface Typegen0 {
     | 'Signing transaction'
     | 'Sending transaction'
     | 'Confirming transaction'
-    | 'Transaction confirmed';
+    | 'Transaction confirmed'
+    | 'Transaction Not Confirmed'
+    | 'Transaction failed';
   tags: never;
 }

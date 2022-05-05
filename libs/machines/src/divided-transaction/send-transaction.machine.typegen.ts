@@ -5,6 +5,7 @@ export interface Typegen0 {
   eventsCausingActions: {
     'Save signature in memory': 'done.invoke.Send Transaction Machine.Sending Transaction:invocation[0]';
     'Notify send transaction error': 'error.platform.Send Transaction Machine.Sending Transaction:invocation[0]';
+    'Save error in memory': 'error.platform.Send Transaction Machine.Sending Transaction:invocation[0]';
   };
   internalEvents: {
     'done.invoke.Send Transaction Machine.Sending Transaction:invocation[0]': {

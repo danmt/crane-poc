@@ -32,14 +32,15 @@ export const transactionProcessorModel = createModel(
       }) => ({ value }),
       transactionSigned: (value: Transaction) => ({ value }),
       transactionSent: (value: TransactionSignature) => ({ value }),
-      transactionConfirmed: (value: TransactionSignature) => ({ value }),
       transactionFailed: (value: unknown) => ({ value }),
+      transactionConfirmed: (value: TransactionSignature) => ({ value }),
+      transactionNotConfirmed: (value: unknown) => ({ value }),
     },
   }
 );
 
 export const transactionProcessorMachine =
-  /** @xstate-layout N4IgpgJg5mDOIC5QBUBOBDAdrdBjALgJYD2mABAAqrG5yzGpkCyeAFoZmAHQCSEANmADEuVGHT4waLDgIlMiUAAdisQkVKKQAD0QBaAMwBWAJxcATAEYAbAA5LABkuWALNYPnbAGhABPfQauXEZGBgDsJqYGBi7OkQC+8T7S2Hga5FQ0dAzMbBzcfIJCWipq6Vq6CHo2RsGWJrbmDQ4uRpZGYeY+-lUGtmF15tbWTvVWLmGJyRipcqSU1LSw9IwsuOycXADCYhIcUGQpsulC+DPH8jvikhAlquryFQEGZhFhDgYOnbG21t36LhcFnMRiaE3MLhMlneximICOaXkCyyyxyaw23AAyoQoJh9mQzjJEaRTudiZhsbjIHcyo8kDoAo0LGEbLYGkZbE5QS5-ggPOZgh1zGFbJDbB4RQY4Qi5hlFtlVnlNpiwJgIPjCbMTpqLqQVZh8DSHpp6ZUmgLrNCPA4Rg1OaLeZYXoMhk13E0HI1pWTZcilitcut8ttSAAzQioAC2Gp92tjlzDEcj1PppWNClNiGFtXaLlFJgcbtMw15ehBQJcn2FDUs5gMdj6iSSIEwxAgcC0MvSfoVgYxvAEYCN5UzvUrXAckUCJmMNo6fz8AIctViLRiVjC7zrRm9RN9mX9aKV3Cue0wBy7dOU9xHoEqekBli4-RMLM3YUhoNL5ghXE67yMBwnDZFpzF3LUkQPXt0WDSk8XPAl4xNa9aWQhkqhcJouFzQInGzYYTEdJwJ0La1nGsVooTA5tL3mKDUUVINlVVdUEJ1clhyvdCrFqExMM+awwiMQEbQdRc+UcCchQ6eoJmsUxwN1OUUQDGDNi2RMoxjPdbxANNdLNG1gn4utnBCfiFx6PQRQnQEOi+ExhU9QFFPJHsGL7YNaPIXBNOTW5UxvLizVCLhhjCGJPk3StAlLF4gTwwSnWsV9PTCaxXP3eUPLUodAtQjM7wBeTnzeaFosiLpxIfGzV0rEFhQo+SdybIA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QBUBOBDAdrdBjALgJYD2mABAAqrG5yzGpkCyeAFoZmAHQCSEANmADEuVGHT4waLDgIlMiUAAdisQkVKKQAD0QBaAKwAWA1yMB2AMwGAnFYBMANgAczo0YA0IAJ77nARn8uS2cbeydnA1sABmj7AF94r2lsPA1yKho6BmY2Dm4+QSEtFTV0rV0EPUtooP8jSytbR3NHA3sTL18qt0cuW0sba2iGmwMXROSMVLlSSmpaWHpGFlx2Ti4AYTEJDigyFNl0oXxpo-lt8UkIEtV1eQr9Ixcuf2dzA0snNrD7f0cuk9zDZ+uZgSY-v5wQZJiBDml5PMskscqt1twAMqEKCYPZkU4yBGkE5nImYLE4yC3MoPJA6RBfLh-dr+QY2EwGVruQFVN6mAzOWpGKE1KFWRyw+GzDILbIrPIbDFgTAQPEEmbHdXnUhKzD4an3TR0yqDMztczROzRGr2GoAnz6AyBMzOcJjfxjaKCtyS0nSpGLZa5Nb5Li61WYfZaskkwnSgBi6EIghudNKhoUxoZn1eNhsXottmcjR51Sir0tNneNjalhMJl9cfSAblwfRW1IADNCKgALZqv2awcXLs93tUtN3cpZhB-Lh52pjIxuPPmZyl5yOPqWwb2UKuqEwpJw4dzTKB1EK7ibUd9gdN+SxjXyAByxHwN8w3b7E+UU9poAmk486bo4wojK0liDAYpYWpYZh7sWRj2Pm9ixDYiTHpgxAQHAWhSs256tmioaFGABrToBTxblw0SOJaxaOOyLhQp4DpVHmRi0W81p-EKfyWI2z5nrKKLyiGGyXLskYHKemZ-jSRpUVUxhBFB5j+MYLj0V89illu5hcFyVoco4liBEJ2oysiQYkYq2K4jJ0bShRAH0ipjLhG4jFGHEAT2t0egen0Ng8QuaGsmhziWWSLZiW2obhvewnySA6aUe51SGeEXkBKFNSfB0paWC0XCOP4sRxI4tp5h0Rgxf6RHxXZ163v2Tlya5SmZc8ZU5ZyLgfLaHqwZp86IfUJjAqy5gNYRom2VeXAEYiuBtb+aX-t1lTRP0cRWJp9jGI0bzIaWVb2H1cTjBalroXNiJNYtEncCtcxvvgZCft+46pgpGaPAgNqvC0+YWNa102KW7QgsubjIWummNLNx5vdZF7ie2aNkJ2SYpl1qUmlBRlQqEh6RGulilm8zhcJERhjE4UGbuYHQPSJNmXi9BOA4YTFmE0dhfC48PU3Rhm1IKdas-YDj1ZhQA */
   transactionProcessorModel.createMachine(
     {
       tsTypes: {} as import('./transaction-processor.machine.typegen').Typegen0,
@@ -94,6 +95,16 @@ export const transactionProcessorMachine =
               actions: 'Transaction sent',
               target: 'Confirming transaction',
             },
+            transactionFailed: {
+              actions: [
+                'Transaction failed',
+                sendParent((_, event) => ({
+                  type: 'Transaction Processor Machine.Transaction failed',
+                  value: event.value,
+                })),
+              ],
+              target: 'Transaction failed',
+            },
           },
         },
         'Confirming transaction': {
@@ -105,11 +116,17 @@ export const transactionProcessorMachine =
               actions: 'Transaction confirmed',
               target: 'Transaction confirmed',
             },
+            transactionNotConfirmed: {
+              actions: 'Transaction not confirmed',
+              target: 'Transaction Not Confirmed',
+            },
           },
         },
         'Transaction confirmed': {
           type: 'final',
         },
+        'Transaction Not Confirmed': {},
+        'Transaction failed': {},
       },
     },
     {
@@ -117,7 +134,9 @@ export const transactionProcessorMachine =
         'Transaction created': () => {},
         'Transaction signed': () => {},
         'Transaction sent': () => {},
+        'Transaction failed': () => {},
         'Transaction confirmed': () => {},
+        'Transaction not confirmed': () => {},
       },
       guards: {
         'auto start enabled': () => true,
@@ -190,9 +209,8 @@ export const transactionProcessorMachine =
               { eager: true }
             )
               .start()
-              .onTransition(({ context, done, value }) => {
+              .onTransition(({ context, value }) => {
                 if (
-                  done &&
                   value === 'Transaction Sent' &&
                   context.signature !== undefined
                 ) {
@@ -203,14 +221,12 @@ export const transactionProcessorMachine =
                   );
                 }
 
-                if (done && value === 'Transaction Failed') {
-                  console.log({ context, event });
-
-                  /* send(
+                if (value === 'Transaction Failed') {
+                  send(
                     transactionProcessorModel.events.transactionFailed(
-                      context.signature
+                      context.error
                     )
-                  ); */
+                  );
                 }
               });
 

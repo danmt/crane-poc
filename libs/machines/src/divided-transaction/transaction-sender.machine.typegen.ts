@@ -4,6 +4,7 @@ export interface Typegen0 {
   '@@xstate/typegen': true;
   eventsCausingActions: {
     'Get block height': 'Transaction Processor Machine.Transaction created';
+    'Handle failed transaction': 'Transaction Processor Machine.Transaction failed';
     'Start transaction processor': 'xstate.init';
   };
   internalEvents: {
@@ -11,7 +12,10 @@ export interface Typegen0 {
   };
   invokeSrcNameMap: {};
   missingImplementations: {
-    actions: 'Get block height' | 'Start transaction processor';
+    actions:
+      | 'Get block height'
+      | 'Handle failed transaction'
+      | 'Start transaction processor';
     services: never;
     guards: never;
     delays: never;
