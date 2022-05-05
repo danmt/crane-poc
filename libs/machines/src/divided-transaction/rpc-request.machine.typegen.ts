@@ -8,14 +8,14 @@ export interface Typegen0 {
     'Save response in context': 'done.invoke.Rpc Request Machine.Sending Request:invocation[0]';
   };
   internalEvents: {
-    'error.platform.Rpc Request Machine.Sending Request:invocation[0]': {
-      type: 'error.platform.Rpc Request Machine.Sending Request:invocation[0]';
-      data: unknown;
-    };
     'done.invoke.Rpc Request Machine.Sending Request:invocation[0]': {
       type: 'done.invoke.Rpc Request Machine.Sending Request:invocation[0]';
       data: unknown;
       __tip: 'See the XState TS docs to learn how to strongly type this.';
+    };
+    'error.platform.Rpc Request Machine.Sending Request:invocation[0]': {
+      type: 'error.platform.Rpc Request Machine.Sending Request:invocation[0]';
+      data: unknown;
     };
     '': { type: '' };
     'xstate.after(5000)#Rpc Request Machine.Sleeping': {

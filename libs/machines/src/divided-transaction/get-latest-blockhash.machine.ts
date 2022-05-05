@@ -1,5 +1,6 @@
 import { Connection } from '@solana/web3.js';
-import { rpcRequestServiceFactory } from './rpc-request.machine';
+import { interpret } from 'xstate';
+import { rpcRequestMachineFactory } from './rpc-request.machine';
 
 export const getLatestBlockhashServiceFactory = (
   connection: Connection,
@@ -8,8 +9,7 @@ export const getLatestBlockhashServiceFactory = (
     fireAndForget: boolean;
   }
 ) => {
-  return rpcRequestServiceFactory(
-    () => connection.getLatestBlockhash(),
-    config
+  return interpret(
+    rpcRequestMachineFactory(() => connection.getLatestBlockhash(), config)
   );
 };

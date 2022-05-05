@@ -1,6 +1,7 @@
 export * from './blockhash-checker.machine';
 export * from './confirm-transaction.machine';
 export * from './create-transaction.machine';
+export * from './create-transaction2.machine';
 export * from './get-latest-blockhash.machine';
 export * from './rpc-request.machine';
 export * from './send-transaction.machine';

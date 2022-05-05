@@ -1,4 +1,4 @@
-import { EventEmitter, Injectable, Output } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
 import { getLatestBlockhashServiceFactory } from '@xstate/machines';
 import { combineLatest, filter, map, tap } from 'rxjs';
@@ -27,12 +27,6 @@ export class GetLatestBlockhashButtonStore extends ComponentStore<ViewModel> {
     this.serviceState$,
     (serviceState) => serviceState === null || !serviceState.can('request')
   );
-
-  @Output() requestSuccess = new EventEmitter<{
-    blockhash: string;
-    lastValidBlockHeight: number;
-  }>();
-  @Output() requestError = new EventEmitter();
 
   constructor(private readonly _connectionService: ConnectionService) {
     super(initialState);

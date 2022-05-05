@@ -1,7 +1,7 @@
-import { assign, interpret } from 'xstate';
+import { assign, sendParent } from 'xstate';
 import { createModel } from 'xstate/lib/model';
 
-export const rpcRequestServiceFactory = <T>(
+export const rpcRequestMachineFactory = <T>(
   request: () => Promise<T>,
   config?: {
     eager: boolean;
@@ -29,7 +29,7 @@ export const rpcRequestServiceFactory = <T>(
   };
 
   const rpcRequestMachine =
-    /** @xstate-layout N4IgpgJg5mDOIC5QCUAOBjABMsBHArnAC6YCyAhugBYCWAdmAHQCSEANmAMQBOehsRRKFQB7WDSI0RdISAAeiALQAWAJwA2RgEYAHMuVaArIYAMh1QGYA7MoA0IAJ5KL1xmuUAmdVquGr6w2UdAF9g+zQsHAJiMkpaBhZ2LllRcUlpWQUERR0rD20TC0LDCy1VZV8Peydsjx1DRlMvf09fE1UtUPCMbD4Yimp6JgBlMDoIeihe6IFOCGkmegA3EQBrJgjp-hIB+JGxibopqO2EZZF0cnS6AG0TAF0UsQkpGSR5JQ8rC0ZVKxN1DoPEYDCYrFZqkoyg0ATp1F9lCY1KoPIYQmEQJsTv04kNGKNxpMtsROGBuNwRNxGKg2FcAGaUgC2jCxfQEsUGCQJh2ObKIZzoK0u1zuj3eqReGXeWRyQMYcOMPmULhcOlUkOyRhMjAsHgs6nKXz0RRM6O6kT5HL2LMtsHw6HQYEgkB4xHI3CIuyGTzSr0ySlymjRGlUfmMwOsGsUph0jVUYK06iKHi8OnqXUxPWx7K9CWzJDtDqdEBdPslb1AMpBjEKPjhqiBafUVnVjiUQVUNfj-109TMegzrJmO1xXI4YFQk04cgEVyY5DpRDJAApTCYTABKThD7ZWvHDceTo5l67+2p5Lu63yWKxlUPqKNWWNA6yGFOI-TI0IYugiEvwd4dxxTkmFYDgTz9aUA10RgWzMMotCRTwgijCx40aNFlDfcpvl0DxByzS1c32QkjmJAQIKlSslEMdRtURUpAh0EwPBDCwoxTKwa0BAJ1CCU010MAiLWHPc81te1HWdCBKIrD5shKTtmyKeo7z8fQozfLQuwTawQSCM1MxE3diJtUS6XIGgOBk8VnlPKCFIsWMWwNVjLGVdSNQaZt4SclEG2vFNhPIkcQPxQ9Jlks9ow8bUtGUA0LHMdRAWBCE22yeodT1W8NB0RDawsYL8zEjZLXmBgoocxQtF1Rp9C8Lw+IQuwMsUUpOy0Vi0zw5sTCMIqMSAnNRzAKrqOyeNNAVQwlRVPzNPKHTb1i1E0MG0IgA */
+    /** @xstate-layout N4IgpgJg5mDOIC5QCUAOBjABMsBHArnAC6YCyAhugBYCWAdmAHQCSEANmAMQBOehsRRKFQB7WDSI0RdISAAeiAEwBmRooCs6gAzqALMoAcAdiMBGAJyHlAGhABPRAFpdio413qDp04tN7dAGyW6gC+IbZoWDgExGSUtAws7FyyouKS0rIKCI7K6oqMAQF5AXoaXgb6tg45ykbq7kX5AQaK+ioBumERGNh8sRTU9EwAymB0EPRQfTECnBDSTPQAbiIA1kyRM-wkgwmj45N009E7CCsi6OQZdADaWgC6qWISUjJI8kp5jFpGWub6IxeYrmYzVJzKLS6RjqZQaf6BXS6SrFbogLanAbxYaMMYTKbbYicMDcbgibiMVBsa4AM3JAFtGBj+gI4kNEnijicWURznRVlcbvcnh80q9Mh9srliu5FAEofVlOYWr5dOCcm0tGpjP4AvU2oFQuF0b1May9jizSRYPh0OgwJBIDxiORuEQLQxnuk3lkIeo3H4tIpygE-OogurHOpQTC9OGiuZzFoDMousbmbNdtjElbMDa7Q6IE6veL3qBsspSu5firzKYa4n1JH-eYfnH8ooKkZFOY0Rmdmz9kyeZgaeQaBwIM6BK73dmwCWbr6cv6tW18gZzK5E8iApHdEZoUGVFotMpU0ZQUZlH3TSOPZsR2OJ8XRS8l5LEJWGroa6UmpCPZqvYTgmIwQJGPK-w+GYna3lE97zriHBgKgUycHIM5EEw5A0th3AABTaKeACUnD9li7KjChaHHIuPqfggpgtGocJygYXj6EqQaRsxBjgTq0b5HkdYGEaxp0CIRbwB8FHmkhrAcPRErlk4Patnk9a6Fu9aQQY+4GFqHaQueSKmHC9TwYS8lUbihwElayllp8OS-owyqVpUSaWD4+SRsophuGe8ItCYRSBFZuYPsOmZ5ra9qOhATnLo4ihrueoawjodaQW0kahqYbYeJ03jBsUaY9AhsXRbmz6TsljGOAEPbueofjbm0KjKuqSZqO1LTmIeSJCZFiG2SMNFTA1qk5FqfyHkUvwBZ0liHrx9TavUfy-ECgVGKN1VIbmCyem+3oqS5hgBIwm75L8wYAqUdT7v8PyrWxKhtaGB0Dg+00uU1sKte1l6dUqe4gTkLRHnGRTXnkh43mEIRAA */
     rpcRequestModel.createMachine({
       tsTypes: {} as import('./rpc-request.machine.typegen').Typegen0,
       schema: { services: {} as RpcRequestMachineServices },
@@ -51,6 +51,10 @@ export const rpcRequestServiceFactory = <T>(
             src: 'Send request',
             onDone: [
               {
+                actions: sendParent((_, event) => ({
+                  type: 'Rpc Request Machine.Request succeeded',
+                  data: event.data,
+                })),
                 target: 'Request succeeded',
               },
             ],
@@ -61,7 +65,6 @@ export const rpcRequestServiceFactory = <T>(
                 target: 'Sleeping',
               },
               {
-                actions: 'Save error in context',
                 target: 'Request failed',
               },
             ],
@@ -81,7 +84,16 @@ export const rpcRequestServiceFactory = <T>(
           },
         },
         'Request failed': {
-          type: 'final',
+          entry: 'Save error in context',
+          always: {
+            cond: 'is fire and forget',
+            target: 'Request done',
+          },
+          on: {
+            restartMachine: {
+              target: 'Idle',
+            },
+          },
         },
         Sleeping: {
           after: {
@@ -97,42 +109,39 @@ export const rpcRequestServiceFactory = <T>(
       id: 'Rpc Request Machine',
     });
 
-  return interpret(
-    rpcRequestMachine.withConfig(
-      {
-        actions: {
-          'Save response in context': assign({
-            response: (_, event) => event.data,
-            error: (_) => undefined,
-          }),
-          'Save error in context': assign({
-            error: (_, event) => event.data,
-            response: (_) => undefined,
-          }),
-          'Remove response from context': assign({
-            response: (_) => undefined,
-          }),
-        },
-        guards: {
-          'is fire and forget': () => config?.fireAndForget ?? false,
-          'auto start enabled': () => config?.eager ?? false,
-          'is network failed error': (_, event) => {
-            if (!(event.data instanceof Error)) {
-              return false;
-            }
+  return rpcRequestMachine.withConfig(
+    {
+      actions: {
+        'Save response in context': assign({
+          response: (_, event) => event.data,
+          error: (_) => undefined,
+        }),
+        'Save error in context': assign({
+          error: (_, event) => event.data,
+          response: (_) => undefined,
+        }),
+        'Remove response from context': assign({
+          response: (_) => undefined,
+        }),
+      },
+      guards: {
+        'is fire and forget': () => config?.fireAndForget ?? false,
+        'auto start enabled': () => config?.eager ?? false,
+        'is network failed error': (_, event) => {
+          if (!(event.data instanceof Error)) {
+            return false;
+          }
 
-            return event.data.message.includes('Network request failed');
-          },
-        },
-        services: {
-          'Send request': request,
+          return event.data.message.includes('Network request failed');
         },
       },
-      {
-        response: undefined as T | undefined,
-        error: undefined,
-      }
-    ),
-    { devTools: true }
+      services: {
+        'Send request': request,
+      },
+    },
+    {
+      response: undefined as T | undefined,
+      error: undefined,
+    }
   );
 };
