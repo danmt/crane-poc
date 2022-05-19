@@ -9,6 +9,7 @@ import { rpcRequestMachineFactory } from './rpc-request.machine';
 
 export type EventType<Type> = { type: Type };
 export type EventValue<Type> = { value: Type };
+export type EventData<Type> = { data: Type };
 
 export type CreateTransactionEvent = EventType<'createTransaction'> &
   EventValue<{
@@ -22,7 +23,7 @@ export type BuildTransactionEvent = EventType<'buildTransaction'> &
   }>;
 export type RpcRequestSuccess =
   EventType<'Rpc Request Machine.Request succeeded'> &
-    EventValue<{
+    EventData<{
       blockhash: string;
       latestValidBlockHeight: number;
     }>;
@@ -48,15 +49,9 @@ export const createTransactionMachineFactory = (
       fireAndForget: true,
     });
 
-  /** @xstate-layout N4IgpgJg5mDOIC5QGEBOYCGAXMACAKqhgHawYDGWAlgPbG4CyFAFlcWAEwB0AkhADZgAxOXTYwhEmUq1iiUAAcasKtTryQAD0QBGAJwBmLgAZTxgCwcAHADZjegKwHzAGhABPRM4DsXPf70bHStnK0cHcwBfSLc0TBwCIlIKNXomclZ2bj5BIQ0lFVSNbQR9IzMLaztHZzdPBA4OPT8AvUaOMoMHK2jYsQTJZJk6RhY2Ti4AMTAsDLYoXH5xWCxcACN+GnIAa2YMWGYhACUFclwjsABHAFc4VfTMsC4Lm7vcWGvycjBISHzlVSyYqIKzecocBzGKwcYzeYwGKwObx1LwGYxcSGmDjeHTGJzQvTeXogOLiRJSFKyUZzLJcUnUYgLLBJaSpIRra5UfgQQasoFIEAFQHqAUlHTmcy+ez+EKg+wGbyuDyoqxcGzqmwGHQwvSw0EGYn0vC8ykjB7jbj0+a4ZkU4bEPICoVFUW6CVSgKyuGGRUohowtUaoIOQI6HQ2HoxEn9Y0s01pMa0k323CieKQIToFYYVBYc3sf6FfmgMV2bhIyEK5wOEM4v26lr+bxWHRwmzmKz2Q0x8lDVLUx7cZP9tPiCCOxQAl0lxAw7y+cMQrWIhFhv2NIzhjU6ENBcORqPEGgQOAaI29vlmxMTHJgQvCuSuhCWP0+Rv+RrdfQObvpi-xgcLSmGYaQWJYcBWdZNh2PYDnvactEQSEbC4cwFQcDhzAjcxDCRJV6mXDEKm1Gw9HFEIbF-MlhypfMJitRkbTje14OLRDSg6VUDAhfcOiaTCbFfND30McUbBDKxESogZmP7Oih1kqlRxwCBWJFGdSm8OwMQVLCHFInD9CsdcOBQoNxLQvRoW4n8o3PGirxpCYABE6DvJ0pzYkoOC1dEQ38Vt2gcVt8NnDCuC3cSwUCsFvA4aTYztOTrw4NTHw04I-WCaJoiAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QGEBOYCGAXMACAKqhgHawYDGWAlgPbG4CyFAFlcWAEwB0AkhADZgAxOXTYwhEmUq1iiUAAcasKtTryQAD0QBaAIwAGPQE4uADmNmzAZgCsFjgHZH16wBoQAT0TWzANi5jYw47Gz8Daz1bA1sAX1iPNEwcAiJSCjV6JnJWdm4+QSENJRVMjW0EHXtbLkcAFltjOoMWsxCDOo9vBEczLkM-Djao3r09F3jEsRTJdJk6RhY2Ti4AMTAsHLYoXH5xWCxcACN+GnIAa2YMWGYhACUFclw7sABHAFc4Q+zcsC4Xj5fXCwd7kchgSCQYrKVSycq6JymDocIz1WzNPThWxdHzorgcRrGFxRIxWOqTEBJcSpKQZWSLLZ5LhU6jEHZYNLSTJCI7vKj8CCzLlwpAgEqw9Siio2LgGPzWBrGZEGMx1PyOHEIWwKwJtRyWCzWDgo6wUll4IV0hY-ZbcFnbXAc2nzYhFUXispSxB1Op9TF6BWGRxBvSa6wuWqEsyOWzq6wGxxm6YWzlWrJLJmWl24UTJSBCdAHDCoLA29jQ0oi0AVfQccb9EImNqDWy9Dia6I1OrB7WDDpKkJxBKU5M0uaZBm-bhZie58QQN2KGGe6uIMwRLh1SLB3xGtp1Yya3pI1yn6LrpXkinEGgQOAac1j4XWjMrApgCsSuReyp6OumPQfWcNUmmDeUw3VfFCWCQwOGMWN5STPMnzTSdbTWDZGR2PYcAOY5TguK4bk-FctF0Pxu1qJwTBRbsDBjDUvB8Oo9EjIIrHVMYVUTYdHxnekyxWe02UdVMXRIqsyIQP9uAsEC7DrRp0QgxwoKCGCDDg2MeKmZD+JfRkVn0+g5xwCAJMlVcEBY6xN3GdFbA4X1W3GI9wlqZVuwVcIAyQ6ljLQpkABE6A-d1l0kipDDMGoxkc2xHI6TFsSYhAbDqQI0VjfxjExYI-JmMSJ0EjgLO-Kzay3fogPqPxQMxdxUtiuUnCcvxqmCBV4niIA */
   return createMachine(
     {
-      tsTypes: {} as import('./create-transaction2.machine.typegen').Typegen0,
-      schema: {
-        events: {} as CreateTransactionMachineEvent,
-      },
-      id: 'Create Transaction Machine2',
-      initial: 'Idle',
       context: {
         connection,
         latestBlockhash: undefined as
@@ -72,6 +67,10 @@ export const createTransactionMachineFactory = (
           | ActorRefFrom<ReturnType<typeof getLatestBlockhashMachine>>
           | undefined,
       },
+      tsTypes: {} as import('./create-transaction.machine.typegen').Typegen0,
+      schema: { events: {} as CreateTransactionMachineEvent },
+      id: 'Create Transaction Machine',
+      initial: 'Idle',
       states: {
         Idle: {
           always: {
@@ -133,7 +132,7 @@ export const createTransactionMachineFactory = (
             }),
         }),
         'Save latest blockhash in context': assign({
-          latestBlockhash: (_, event) => event.value,
+          latestBlockhash: (_, event) => event.data,
         }),
         'Save transaction in context': assign({
           transaction: (context) =>
@@ -172,7 +171,7 @@ export const createTransactionMachineFactory = (
   );
 };
 
-export const createTransactionServiceFactory2 = (
+export const createTransactionServiceFactory = (
   connection: Connection,
   config?: {
     eager: boolean;

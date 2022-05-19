@@ -1,21 +1,21 @@
 import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
 import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js';
-import { createTransactionServiceFactory2 } from '@xstate/machines';
+import { createTransactionServiceFactory } from '@xstate/machines';
 import { combineLatest, filter, map, tap } from 'rxjs';
 import { StateFrom } from 'xstate';
 import { isNotNull, tapEffect } from '../utils';
 
-type ServiceType = ReturnType<typeof createTransactionServiceFactory2>;
+type ServiceType = ReturnType<typeof createTransactionServiceFactory>;
 type StateType = StateFrom<ServiceType['machine']>;
-type Some<T> = T | null;
+type Option<T> = T | null;
 
 interface ViewModel {
-  service: Some<ServiceType>;
-  serviceState: Some<StateType>;
-  connection: Some<Connection>;
-  feePayer: Some<PublicKey>;
-  instructions: Some<TransactionInstruction[]>;
+  service: Option<ServiceType>;
+  serviceState: Option<StateType>;
+  connection: Option<Connection>;
+  feePayer: Option<PublicKey>;
+  instructions: Option<TransactionInstruction[]>;
 }
 
 const initialState: ViewModel = {
@@ -35,8 +35,16 @@ export class CreateTransactionButtonStore extends ComponentStore<ViewModel> {
   readonly instructions$ = this.select(({ instructions }) => instructions);
   readonly disabled$ = this.select(
     this.serviceState$,
-    (serviceState) =>
-      serviceState === null || !serviceState.can('createTransaction' as any)
+    this.feePayer$,
+    this.instructions$,
+    (serviceState, feePayer, instructions) =>
+      serviceState === null ||
+      feePayer === null ||
+      instructions === null ||
+      !serviceState.can({
+        type: 'createTransaction',
+        value: { feePayer, instructions },
+      })
   );
 
   constructor() {
@@ -46,7 +54,7 @@ export class CreateTransactionButtonStore extends ComponentStore<ViewModel> {
       this.connection$.pipe(
         isNotNull,
         map((connection) =>
-          createTransactionServiceFactory2(connection, {
+          createTransactionServiceFactory(connection, {
             eager: false,
             autoBuild: true,
             fireAndForget: false,
@@ -100,9 +108,9 @@ export class CreateTransactionButtonStore extends ComponentStore<ViewModel> {
   );
 
   readonly createTransaction = this.effect<{
-    service: Some<ServiceType>;
-    feePayer: Some<PublicKey>;
-    instructions: Some<TransactionInstruction[]>;
+    service: Option<ServiceType>;
+    feePayer: Option<PublicKey>;
+    instructions: Option<TransactionInstruction[]>;
   }>(
     tap(({ service, feePayer, instructions }) => {
       if (service === null || feePayer === null || instructions === null) {

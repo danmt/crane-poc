@@ -5,8 +5,6 @@ import {
   SystemProgram,
   Transaction,
 } from '@solana/web3.js';
-import { transactionSenderServiceFactory } from '@xstate/machines';
-import { from } from 'rxjs';
 import { environment } from '../environments/environment';
 import { ConnectionService } from './connection.service';
 
@@ -18,11 +16,6 @@ import { ConnectionService } from './connection.service';
     </header>
 
     <main>
-      <xstate-get-latest-blockhash-button
-        (requestSuccess)="onGetLatestBlochashSuccess($event)"
-        (requestError)="onGetLatestBlochashError($event)"
-      ></xstate-get-latest-blockhash-button>
-
       <xstate-create-transaction-button
         [connection]="connection"
         [feePayer]="authority.publicKey"
@@ -48,30 +41,6 @@ export class AppComponent {
   ];
 
   constructor(private readonly _connectionService: ConnectionService) {}
-
-  onSendTransaction() {
-    from(
-      transactionSenderServiceFactory(
-        this.connection,
-        this.instructions,
-        this.authority.publicKey,
-        this.authority
-      ).start()
-    ).subscribe(({ context, value, event }) =>
-      console.log({ context, value, event })
-    );
-  }
-
-  onGetLatestBlochashSuccess(response: {
-    blockhash: string;
-    lastValidBlockHeight: number;
-  }) {
-    console.log(response);
-  }
-
-  onGetLatestBlochashError(error: unknown) {
-    console.log(error);
-  }
 
   onTransactionCreated(transaction: Transaction) {
     console.log(transaction);
