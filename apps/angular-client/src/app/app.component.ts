@@ -1,4 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { WalletStore } from '@heavy-duty/wallet-adapter';
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 import {
   Keypair,
   LAMPORTS_PER_SOL,
@@ -26,8 +28,9 @@ import { ConnectionService } from './connection.service';
     </main>
   `,
   styles: [],
+  providers: [WalletStore],
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   readonly connection = this._connectionService.connection;
   readonly authority = Keypair.fromSecretKey(
     new Uint8Array(environment.authority)
@@ -40,7 +43,16 @@ export class AppComponent {
     }),
   ];
 
-  constructor(private readonly _connectionService: ConnectionService) {}
+  constructor(
+    private readonly _connectionService: ConnectionService,
+    private readonly _walletStore: WalletStore
+  ) {}
+
+  ngOnInit() {
+    this._walletStore.setAdapters([new PhantomWalletAdapter()]);
+
+    this._walletStore.publicKey$.subscribe((a) => console.log(a?.toBase58()));
+  }
 
   onTransactionCreated(transaction: Transaction) {
     console.log(transaction);
