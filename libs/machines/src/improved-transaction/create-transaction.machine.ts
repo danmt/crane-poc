@@ -6,10 +6,7 @@ import {
 } from '@solana/web3.js';
 import { ActorRefFrom, assign, createMachine, interpret, spawn } from 'xstate';
 import { rpcRequestMachineFactory } from './rpc-request.machine';
-
-export type EventType<Type> = { type: Type };
-export type EventValue<Type> = { value: Type };
-export type EventData<Type> = { data: Type };
+import { EventData, EventType, EventValue } from './types';
 
 export type CreateTransactionEvent = EventType<'createTransaction'> &
   EventValue<{
