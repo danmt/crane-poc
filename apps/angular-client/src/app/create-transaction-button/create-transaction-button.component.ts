@@ -20,14 +20,20 @@ import { CreateTransactionButtonStore } from './create-transaction-button.store'
 export class CreateTransactionButtonComponent implements OnInit {
   readonly disabled$ = this._createTransactionButtonStore.disabled$;
 
-  @Input() set connection(value: Connection) {
-    this._createTransactionButtonStore.setConnection(value);
+  @Input() set connection(value: Connection | null) {
+    if (value !== null) {
+      this._createTransactionButtonStore.setConnection(value);
+    }
   }
-  @Input() set feePayer(value: PublicKey) {
-    this._createTransactionButtonStore.setFeePayer(value);
+  @Input() set feePayer(value: PublicKey | null) {
+    if (value !== null) {
+      this._createTransactionButtonStore.setFeePayer(value);
+    }
   }
-  @Input() set instructions(value: TransactionInstruction[]) {
-    this._createTransactionButtonStore.setInstructions(value);
+  @Input() set instructions(value: TransactionInstruction[] | null) {
+    if (value !== null) {
+      this._createTransactionButtonStore.setInstructions(value);
+    }
   }
   @Output() transactionCreated = new EventEmitter();
 

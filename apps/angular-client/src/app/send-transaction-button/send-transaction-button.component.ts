@@ -1,4 +1,11 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+} from '@angular/core';
 import { Transaction } from '@solana/web3.js';
 import { filter, take, takeUntil } from 'rxjs';
 import { isNotNull } from '../utils';
@@ -16,12 +23,16 @@ import { SendTransactionButtonStore } from './send-transaction-button.store';
     </button>
   `,
   providers: [SendTransactionButtonStore],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SendTransactionButtonComponent implements OnInit {
   readonly disabled$ = this._sendTransactionButtonStore.disabled$;
 
-  @Input() set transaction(value: Transaction) {
-    this._sendTransactionButtonStore.setTransaction(value);
+  @Input() set transaction(value: Transaction | null) {
+    console.log(value, value?.verifySignatures());
+    if (value !== null && value.verifySignatures()) {
+      this._sendTransactionButtonStore.setTransaction(value);
+    }
   }
 
   @Output() transactionSent = new EventEmitter();

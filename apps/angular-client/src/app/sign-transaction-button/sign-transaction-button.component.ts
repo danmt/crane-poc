@@ -20,11 +20,15 @@ import { SignTransactionButtonStore } from './sign-transaction-button.store';
 export class SignTransactionButtonComponent implements OnInit {
   readonly disabled$ = this._signTransactionButtonStore.disabled$;
 
-  @Input() set signer(value: PublicKey) {
-    this._signTransactionButtonStore.setSigner(value);
+  @Input() set signer(value: PublicKey | null) {
+    if (value !== null) {
+      this._signTransactionButtonStore.setSigner(value);
+    }
   }
-  @Input() set transaction(value: Transaction) {
-    this._signTransactionButtonStore.setTransaction(value);
+  @Input() set transaction(value: Transaction | null) {
+    if (value !== null) {
+      this._signTransactionButtonStore.setTransaction(value);
+    }
   }
 
   @Output() transactionSigned = new EventEmitter();
@@ -41,7 +45,7 @@ export class SignTransactionButtonComponent implements OnInit {
         takeUntil(this._signTransactionButtonStore.destroy$)
       )
       .subscribe(({ context }) =>
-        this.transactionSigned.emit(context.transaction)
+        this.transactionSigned.emit(new Transaction(context.transaction))
       );
   }
 

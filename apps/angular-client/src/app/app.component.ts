@@ -8,7 +8,7 @@ import {
   Transaction,
   TransactionSignature,
 } from '@solana/web3.js';
-import { map } from 'rxjs';
+import { BehaviorSubject, map } from 'rxjs';
 import { isNotNull } from './utils';
 
 @Component({
@@ -18,38 +18,42 @@ import { isNotNull } from './utils';
       <h1>XState Solana Playground</h1>
     </header>
 
-    <main *ngIf="authority$ | async as authority">
-      <ng-container *ngIf="connection$ | async as connection">
-        <xstate-create-transaction-button
-          *ngIf="instructions$ | async as instructions"
-          [connection]="connection"
-          [feePayer]="authority"
-          [instructions]="instructions"
-          (transactionCreated)="onTransactionCreated($event)"
-        >
-        </xstate-create-transaction-button>
-      </ng-container>
+    <main>
+      <xstate-create-transaction-button
+        [connection]="(connection$ | async) ?? null"
+        [feePayer]="(authority$ | async) ?? null"
+        [instructions]="(instructions$ | async) ?? null"
+        (transactionCreated)="onTransactionCreated($event)"
+      >
+      </xstate-create-transaction-button>
 
       <xstate-sign-transaction-button
-        *ngIf="transaction !== undefined"
-        [transaction]="transaction"
-        [signer]="authority"
+        [transaction]="transaction$ | async"
+        [signer]="(authority$ | async) ?? null"
         (transactionSigned)="onTransactionSigned($event)"
       >
       </xstate-sign-transaction-button>
 
       <xstate-send-transaction-button
-        *ngIf="transaction !== undefined && isSigned"
-        [transaction]="transaction"
+        [transaction]="transaction$ | async"
         (transactionSent)="onTransactionSent($event)"
       >
       </xstate-send-transaction-button>
+
+      <xstate-confirm-transaction-button
+        [signature]="signature$ | async"
+        (transactionConfirmed)="onTransactionConfirmed()"
+      >
+      </xstate-confirm-transaction-button>
     </main>
   `,
   styles: [],
   providers: [ConnectionStore, WalletStore],
 })
 export class AppComponent implements OnInit {
+  private readonly _transaction = new BehaviorSubject<Transaction | null>(null);
+  private readonly _signature =
+    new BehaviorSubject<TransactionSignature | null>(null);
   readonly connection$ = this._connectionStore.connection$;
   readonly authority$ = this._walletStore.publicKey$;
   readonly instructions$ = this.authority$.pipe(
@@ -62,10 +66,8 @@ export class AppComponent implements OnInit {
       }),
     ])
   );
-
-  transaction?: Transaction;
-  isSigned = false;
-  signature: TransactionSignature | null = null;
+  readonly transaction$ = this._transaction.asObservable();
+  readonly signature$ = this._signature.asObservable();
 
   constructor(
     private readonly _connectionStore: ConnectionStore,
@@ -78,17 +80,18 @@ export class AppComponent implements OnInit {
   }
 
   onTransactionCreated(transaction: Transaction) {
-    this.transaction = transaction;
-    this.isSigned = false;
+    this._transaction.next(transaction);
   }
 
   onTransactionSigned(transaction: Transaction) {
-    this.transaction = transaction;
-    this.isSigned = true;
+    this._transaction.next(transaction);
   }
 
   onTransactionSent(signature: TransactionSignature) {
-    console.log(signature);
-    this.signature = signature;
+    this._signature.next(signature);
+  }
+
+  onTransactionConfirmed() {
+    console.log('confirmed');
   }
 }
