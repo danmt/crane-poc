@@ -24,4 +24,4 @@ The user can press a button to send the transaction. Once sent, the Confirmation
 
 ## Confirm transaction
 
-The user can press a button to confirm the transaction, the transaction signature is shown to the user.
+The user can press a button to confirm the transaction, the transaction signature is shown to the user. The UI tracks the whole confirmation: processed -> confirmed -> finalized. Adds a timestamp for each step of the confirmation.
