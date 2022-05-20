@@ -6,6 +6,7 @@ import {
   LAMPORTS_PER_SOL,
   SystemProgram,
   Transaction,
+  TransactionSignature,
 } from '@solana/web3.js';
 import { map } from 'rxjs';
 import { isNotNull } from './utils';
@@ -33,8 +34,16 @@ import { isNotNull } from './utils';
         *ngIf="transaction !== undefined"
         [transaction]="transaction"
         [signer]="authority"
+        (transactionSigned)="onTransactionSigned($event)"
       >
       </xstate-sign-transaction-button>
+
+      <xstate-send-transaction-button
+        *ngIf="transaction !== undefined && isSigned"
+        [transaction]="transaction"
+        (transactionSent)="onTransactionSent($event)"
+      >
+      </xstate-send-transaction-button>
     </main>
   `,
   styles: [],
@@ -55,6 +64,8 @@ export class AppComponent implements OnInit {
   );
 
   transaction?: Transaction;
+  isSigned = false;
+  signature: TransactionSignature | null = null;
 
   constructor(
     private readonly _connectionStore: ConnectionStore,
@@ -68,5 +79,16 @@ export class AppComponent implements OnInit {
 
   onTransactionCreated(transaction: Transaction) {
     this.transaction = transaction;
+    this.isSigned = false;
+  }
+
+  onTransactionSigned(transaction: Transaction) {
+    this.transaction = transaction;
+    this.isSigned = true;
+  }
+
+  onTransactionSent(signature: TransactionSignature) {
+    console.log(signature);
+    this.signature = signature;
   }
 }

@@ -1,5 +1,9 @@
 import { assign, sendParent } from 'xstate';
 import { createModel } from 'xstate/lib/model';
+import { EventData, EventType } from './types';
+
+export type RpcRequestSuccess<T> =
+  EventType<'Rpc Request Machine.Request succeeded'> & EventData<T>;
 
 export const rpcRequestMachineFactory = <T>(
   request: () => Promise<T>,

@@ -8,23 +8,22 @@ import { ActorRefFrom, assign, createMachine, interpret, spawn } from 'xstate';
 import { rpcRequestMachineFactory } from './rpc-request.machine';
 import { EventData, EventType, EventValue } from './types';
 
-export type CreateTransactionEvent = EventType<'createTransaction'> &
+type CreateTransactionEvent = EventType<'createTransaction'> &
   EventValue<{
     feePayer: PublicKey;
     instructions: TransactionInstruction[];
   }>;
-export type BuildTransactionEvent = EventType<'buildTransaction'> &
+type BuildTransactionEvent = EventType<'buildTransaction'> &
   EventValue<{
     feePayer: PublicKey;
     instructions: TransactionInstruction[];
   }>;
-export type RpcRequestSuccess =
-  EventType<'Rpc Request Machine.Request succeeded'> &
-    EventData<{
-      blockhash: string;
-      latestValidBlockHeight: number;
-    }>;
-export type RestartMachineEvent = EventType<'restartMachine'>;
+type RpcRequestSuccess = EventType<'Rpc Request Machine.Request succeeded'> &
+  EventData<{
+    blockhash: string;
+    latestValidBlockHeight: number;
+  }>;
+type RestartMachineEvent = EventType<'restartMachine'>;
 
 export type CreateTransactionMachineEvent =
   | CreateTransactionEvent
@@ -46,7 +45,7 @@ export const createTransactionMachineFactory = (
       fireAndForget: true,
     });
 
-  /** @xstate-layout N4IgpgJg5mDOIC5QGEBOYCGAXMACAKqhgHawYDGWAlgPbG4CyFAFlcWAEwB0AkhADZgAxOXTYwhEmUq1iiUAAcasKtTryQAD0QBaAIwAGPQE4uADmNmzAZgCsFjgHZH16wBoQAT0TWzANi5jYw47Gz8Daz1bA1sAX1iPNEwcAiJSCjV6JnJWdm4+QSENJRVMjW0EHXtbLkcAFltjOoMWsxCDOo9vBEczLkM-Djao3r09F3jEsRTJdJk6RhY2Ti4AMTAsHLYoXH5xWCxcACN+GnIAa2YMWGYhACUFclw7sABHAFc4Q+zcsC4Xj5fXCwd7kchgSCQYrKVSycq6JymDocIz1WzNPThWxdHzorgcRrGFxRIxWOqTEBJcSpKQZWSLLZ5LhU6jEHZYNLSTJCI7vKj8CCzLlwpAgEqw9Siio2LgGPzWBrGZEGMx1PyOHEIWwKwJtRyWCzWDgo6wUll4IV0hY-ZbcFnbXAc2nzYhFUXispSxB1Op9TF6BWGRxBvSa6wuWqEsyOWzq6wGxxm6YWzlWrJLJmWl24UTJSBCdAHDCoLA29jQ0oi0AVfQccb9EImNqDWy9Dia6I1OrB7WDDpKkJxBKU5M0uaZBm-bhZie58QQN2KGGe6uIMwRLh1SLB3xGtp1Yya3pI1yn6LrpXkinEGgQOAac1j4XWjMrApgCsSuReyp6OumPQfWcNUmmDeUw3VfFCWCQwOGMWN5STPMnzTSdbTWDZGR2PYcAOY5TguK4bk-FctF0Pxu1qJwTBRbsDBjDUvB8Oo9EjIIrHVMYVUTYdHxnekyxWe02UdVMXRIqsyIQP9uAsEC7DrRp0QgxwoKCGCDDg2MeKmZD+JfRkVn0+g5xwCAJMlVcEBY6xN3GdFbA4X1W3GI9wlqZVuwVcIAyQ6ljLQpkABE6A-d1l0kipDDMGoxkc2xHI6TFsSYhAbDqQI0VjfxjExYI-JmMSJ0EjgLO-Kzay3fogPqPxQMxdxUtiuUnCcvxqmCBV4niIA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QGEBOYCGAXMACAKqhgHawYDGWAlgPbG4CyFAFlcWAHQCSEANmAGJy6bGEIkylWsUSgADjVhVqdWSAAeiALQAWAKwAGDnoCMAdh06AHAb0AmPVZ1mzAGhABPbXYBsZjga2ZiYmBlYAnLY6JgC+Me5omDgERKQUKvRM5Kzs3HyCagpKGWqaCFo+DhwWdjoAzGbhdTo+PuF27l7ldTYcVqF1fiZ1BpVmPnEJIsniaVJ0jCxsnABiYFjZbFC4vKKwWLgARrw05ADWzBiwzAIASnLkuLdgAI4ArnAHWTmcz++fuFgb3I5DAkEghUUymkpW8eh8HHCfnqBnCehGVjMTk62gadg4djsVnRdhGDhMLUmIESohSEnS0kWm1yNOoxG2WFSkgyAkObyovAgs25MKQICK0NUYrKZiMIT04SsdT0+lGpisOPKziM-V1FJ0kSiVNZeGFDIW32WHFZW1wnPp82IAkhxVFoDKoSM4wV-WigXGg01WgV+IMhPRrRMdhM4Qsxumpq55syS1yZsduGESUgAnQ+wwqCwlvYLslMml2nqBLCtVJqJVhmJQacXsMssqIzqJkq8ezdLmGSZPw46cHWdEEGdYolJQrCBa+IcxNMOgMZnRBhMeiDq5MBNrXcCbRGfji8RAxBoEDgahN-ZFFtTnB4-FLs-dlb0-jMdjC4TRlSYt2OjNqMAQ+CYSoNAYXY6ESva0qOjLFqs6zMtsuw4PsRwnOclzXG+boaJWjTGO0zguD4Vi1JEbieIgdQcHUioxpudiKiMYQ6AhMxJhmKHWtMtr2gOREzkRZRaL+e6-gav7RuY1htEG9j4lu9TdoqTgUlYPGJg6g4CUhCzjjgECEVKH7zpBHDAVioyxpiioqT+AThg4saKXBen3smQ5WgAInQYAWeWVmNhwFFErKFIwdGdRBpBOrRvCoT2cMdg+cZKbMiF05Qu+xHlD4BrVHB9SNM0rTtEG4TDNUbZbu0hJUWYZ4xEAA */
   return createMachine(
     {
       context: {
