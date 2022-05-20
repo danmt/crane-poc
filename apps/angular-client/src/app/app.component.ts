@@ -19,32 +19,48 @@ import { isNotNull } from './utils';
     </header>
 
     <main>
-      <xstate-create-transaction-button
-        [connection]="(connection$ | async) ?? null"
-        [feePayer]="(authority$ | async) ?? null"
-        [instructions]="(instructions$ | async) ?? null"
-        (transactionCreated)="onTransactionCreated($event)"
-      >
-      </xstate-create-transaction-button>
+      <section>
+        <h2>Create transaction</h2>
 
-      <xstate-sign-transaction-button
-        [transaction]="transaction$ | async"
-        [signer]="(authority$ | async) ?? null"
-        (transactionSigned)="onTransactionSigned($event)"
-      >
-      </xstate-sign-transaction-button>
+        <xstate-create-transaction-button
+          [connection]="(connection$ | async) ?? null"
+          [feePayer]="(authority$ | async) ?? null"
+          [instructions]="(instructions$ | async) ?? null"
+          (transactionCreated)="onTransactionCreated($event)"
+        >
+        </xstate-create-transaction-button>
+      </section>
 
-      <xstate-send-transaction-button
-        [transaction]="transaction$ | async"
-        (transactionSent)="onTransactionSent($event)"
-      >
-      </xstate-send-transaction-button>
+      <section>
+        <h2>Sign transaction</h2>
 
-      <xstate-confirm-transaction-button
-        [signature]="signature$ | async"
-        (transactionConfirmed)="onTransactionConfirmed()"
-      >
-      </xstate-confirm-transaction-button>
+        <xstate-sign-transaction-button
+          [transaction]="transaction$ | async"
+          [signer]="(authority$ | async) ?? null"
+          (transactionSigned)="onTransactionSigned($event)"
+        >
+        </xstate-sign-transaction-button>
+      </section>
+
+      <section>
+        <h2>Send transaction</h2>
+
+        <xstate-send-transaction-button
+          [transaction]="transaction$ | async"
+          (transactionSent)="onTransactionSent($event)"
+        >
+        </xstate-send-transaction-button>
+      </section>
+
+      <section>
+        <h2>Confirm transaction</h2>
+
+        <xstate-confirm-transaction-button
+          [signature]="signature$ | async"
+          (transactionConfirmed)="onTransactionConfirmed()"
+        >
+        </xstate-confirm-transaction-button>
+      </section>
     </main>
   `,
   styles: [],
