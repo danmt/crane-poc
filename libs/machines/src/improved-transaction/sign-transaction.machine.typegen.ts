@@ -4,15 +4,9 @@ export interface Typegen0 {
   '@@xstate/typegen': true;
   eventsCausingActions: {
     'Save transaction in context': 'startSigning';
-    'Update transaction with signature in context': 'done.invoke.Sign transaction machine.Signing transaction:invocation[0]';
     'Notify sign transaction error': 'error.platform.Sign transaction machine.Signing transaction:invocation[0]';
   };
   internalEvents: {
-    'done.invoke.Sign transaction machine.Signing transaction:invocation[0]': {
-      type: 'done.invoke.Sign transaction machine.Signing transaction:invocation[0]';
-      data: unknown;
-      __tip: 'See the XState TS docs to learn how to strongly type this.';
-    };
     'error.platform.Sign transaction machine.Signing transaction:invocation[0]': {
       type: 'error.platform.Sign transaction machine.Signing transaction:invocation[0]';
       data: unknown;

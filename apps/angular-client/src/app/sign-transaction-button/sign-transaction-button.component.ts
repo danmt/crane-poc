@@ -34,10 +34,6 @@ export class SignTransactionButtonComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this._signTransactionButtonStore.serviceState$.subscribe((a) =>
-      console.log(a)
-    );
-
     this._signTransactionButtonStore.serviceState$
       .pipe(
         isNotNull,

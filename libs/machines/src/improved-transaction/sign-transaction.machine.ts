@@ -12,17 +12,26 @@ export type SignTransactionMachineEvent =
   | StartSigningEvent
   | SignTransactionEvent;
 
+export type SignTransactionMachineServices = {
+  'Sign transaction': {
+    data: Transaction;
+  };
+};
+
 export const signTransactionMachineFactory = (
   transaction: Transaction | undefined,
   signTransaction: (transaction: Transaction) => Promise<Transaction>,
   config?: { eager: boolean }
 ) => {
-  /** @xstate-layout N4IgpgJg5mDOIC5QGUCWUB2ACALgJwEMNYCBjHVAe2wFsyALVDMAOgEkIAbMAYlhwJ4caTEyiJQAB0qxUFahJAAPRAFoALAHYAbCwCMATgDMABgMBWABxmATOoA0IAJ5rDBlgYOXtBmydNG6tqaNgC+oY4i2PhEJORUtAxMrBzcPIrSsvIYiioIqjZ6lixWetrmBmUmNpqa5uaOLvlGZSzW6uZaFr6WRpbhkejRhMRk2Vh0pIzMLFG4I3HZfEMAKgtjCRkycptIymqFukaa6paWejp1BqeNB7qapsaW5iFl5np6AyBzMaPx1BMkjMfut-hh0ntMjsFHs8hdNCx1F4jAZtGZzt4Ord8jZem1qicbNpAtZNNcviDYhsAZNpqwomJ5lSwTwINRWEwAG6UADW9KGTL+41pyVmQ0Zv0WCQQXMopAI2QA2iYALpbLK7UB5VQIwzqPQkow2czEozY1R6cyIyzdELaY0mdRGIzaCkCyXUxJTUUMjBQQVS6g8MB4PCUPAsSScBUAM3DNDFmADnsB3uB4r9ybBMow3PlStV6uhOVhaiCVsqJnMgXqNjr6gczkQ6hYJj0-htBpMljrBs04QiIAwlAgcEUlKFCVTdPYXDAReyuTLphYmg+liR2m0vQbjaaqiNRhYpg6DfMbZNOnMbqTHrB09Fa2Z41kmEgC81+wQRRsx98BpdbdrjXTRzQ+BFjg3cp-DsapXUHCdAy9GdEM9D8YS1VwDARGxrg+I1ameNswO8DwvE0Nt2z0II7DCBD3VBYUgX5URMzvRdIW2DjMPyQw9DI-UrjqLQ21AptvxOVtz1RXCrxrOjBlvRipxFZh0JLHjVHPEx9GMMwrFsPc1BRI5HU6Nc60sTRvAHUIgA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QGUCWUB2ACALgJwEMNYCBjHVAe2wFsyALVDMAOgEkIAbMAYlhwJ4caTEyiJQAB0qxUFahJAAPRAFoALAHYAbCwCMATgDMABgMBWABxmATOoA0IAJ5rDBlgYOXtBmydNG6tqaNgC+oY4i2PhEJORUtAxMrBzcPIrSsvIYiioIqjZ6lixWetrmBmUmNpqa5uaOLvlGZSzW6uZaFr6WRpbhkejRhMRk2Vh0pIzMLFG4I3HZfEMAKgtjCRkycptIymqFukaa6paWejp1BqeNB7qapsaW5iFl5np6AyBzMaPx1BMkjMfut-hh0ntMjsFHs8hdNCx1F4jAZtGZzt4Ord8jZem1qicbNpAtZNNcviDYhsAZNpqwomJ5lSwTwINRWEwAG6UADW9KGTL+41pyVmQ0Zv0WCQQXMopAI2QA2iYALpbLK7UB5VQIwzqPQkow2czEozY1R6cyIyzdELaY0mdRGIzaCkCyXUxJTUUMjBQQVS6g8MB4PCUPAsSScBUAM3DNDFmADnsB3uB4r9ybBMow3PlStV6uhOVhaiCVsqJnMgXqNjr6gczkQ6hYJj0-htBpMljrBs04QiIAwlAgcEUlKFCVTdPYXDAReyuTLphYmg+liR2m0vQbjaaqiNRhYpg6DfMbZNOnMbqTHrB09Fa2Z41kmEgC81+wQRRsx98BpdbdrjXTRzQ+BFjg3cp-DsapXUHCdAy9GdEM9D8YS1VwDARGxrg+I1ameNswO8DwvE0Nt2z0II7DCBD3VBYUgX5URMzvRdIW2DjMPyQw9DI-UrjqLQ21AptvxOVtz1RXCrxrOjBlvRipxFZh0JLHjVHPEx9GMMwrFsPc1BRI5HXqajAjsToB1CIA */
   return createMachine(
     {
       context: { transaction },
       tsTypes: {} as import('./sign-transaction.machine.typegen').Typegen0,
-      schema: { events: {} as SignTransactionMachineEvent },
+      schema: {
+        events: {} as SignTransactionMachineEvent,
+        services: {} as SignTransactionMachineServices,
+      },
       initial: 'Idle',
       states: {
         Idle: {
@@ -57,7 +66,6 @@ export const signTransactionMachineFactory = (
             src: 'Sign transaction',
             onDone: [
               {
-                actions: 'Update transaction with signature in context',
                 target: 'Sign transaction',
               },
             ],
@@ -79,8 +87,6 @@ export const signTransactionMachineFactory = (
         }),
         'Notify sign transaction error': (_, event) =>
           console.error(event.data),
-        'Update transaction with signature in context': (_, event) =>
-          console.log(event),
       },
       services: {
         'Sign transaction': ({ transaction }) => {
