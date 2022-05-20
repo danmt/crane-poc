@@ -29,7 +29,6 @@ export class SendTransactionButtonComponent implements OnInit {
   readonly disabled$ = this._sendTransactionButtonStore.disabled$;
 
   @Input() set transaction(value: Transaction | null) {
-    console.log(value, value?.verifySignatures());
     if (value !== null && value.verifySignatures()) {
       this._sendTransactionButtonStore.setTransaction(value);
     }
