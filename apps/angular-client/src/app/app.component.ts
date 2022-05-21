@@ -9,6 +9,7 @@ import {
   TransactionSignature,
 } from '@solana/web3.js';
 import { BehaviorSubject, map } from 'rxjs';
+import { IdlInstruction } from './instruction-autocomplete/instruction-autocomplete.component';
 import { isNotNull } from './utils';
 
 @Component({
@@ -21,6 +22,10 @@ import { isNotNull } from './utils';
     <main>
       <section>
         <h2>Create transaction</h2>
+
+        <xstate-instruction-autocomplete
+          (instructionSelected)="onInstructionSelected($event)"
+        ></xstate-instruction-autocomplete>
 
         <xstate-create-transaction-button
           [connection]="(connection$ | async) ?? null"
@@ -93,6 +98,10 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     this._walletStore.setAdapters([new PhantomWalletAdapter()]);
     this._connectionStore.setEndpoint('http://localhost:8899');
+  }
+
+  onInstructionSelected(instruction: IdlInstruction) {
+    console.log(instruction);
   }
 
   onTransactionCreated(transaction: Transaction) {
