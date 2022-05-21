@@ -4,9 +4,9 @@ This project intention is to explore a combination of XState, Angular and Solana
 
 ## Create transaction
 
-Connection and fee payer are provided as `@Input` properties. Instructions can be added dynamically by the user. While [idl-all-the-things](https://discord.com/channels/889577356681945098/975157963465588756) is in progress, we'll have a JSON-based structure to define all the available instructions maintained manually. In the future, replace this with IDLs.
+Connection and fee payer are provided as `@Input` properties. Instructions can be added dynamically by the user. We download the IDLs from [native-to-anchor](https://github.com/acheroncrypto/native-to-anchor/tree/master/anchor/solana) and store them in the assets folder. Using the instruction data from the IDL generate a form structure that can be used by [ngx-formly](https://github.com/ngx-formly/ngx-formly) to generate a form ready to use.
 
-Each instruction belongs to a program, using an autocomplete field the user can easily navigate through the instructions. Once an instruction is selected a form is generated using [ngx-formly](), when the user submits the form the instruction is added to the list, the form and autocomplete states are cleared.
+Each instruction belongs to a program, using an autocomplete field the user can easily navigate through the available instructions. When the user submits the form, the instruction is added to the list, the form and autocomplete states are cleared.
 
 When the transaction is done the user clicks "Create Transaction", this fetches the latest blockhash and adds it to the transaction. After finished, the Signing phase starts.
 
