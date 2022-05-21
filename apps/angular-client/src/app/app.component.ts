@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 import { ConnectionStore, WalletStore } from '@heavy-duty/wallet-adapter';
+import { FormlyFieldConfig } from '@ngx-formly/core';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
 import {
   Keypair,
@@ -8,7 +10,7 @@ import {
   Transaction,
   TransactionSignature,
 } from '@solana/web3.js';
-import { BehaviorSubject, map } from 'rxjs';
+import { BehaviorSubject, map, Observable } from 'rxjs';
 import { IdlInstruction } from './instruction-autocomplete/instruction-autocomplete.component';
 import { isNotNull } from './utils';
 
@@ -20,12 +22,29 @@ import { isNotNull } from './utils';
     </header>
 
     <main>
-      <section>
+      <section class="p-4">
         <h2>Create transaction</h2>
 
         <xstate-instruction-autocomplete
           (instructionSelected)="onInstructionSelected($event)"
         ></xstate-instruction-autocomplete>
+
+        <ng-container *ngIf="fields$ | async as fields">
+          <form
+            [formGroup]="form"
+            (ngSubmit)="onSubmit(model)"
+            *ngIf="fields.length > 0"
+          >
+            <formly-form
+              [form]="form"
+              [fields]="fields"
+              [model]="model"
+            ></formly-form>
+            <button type="submit" mat-raised-button color="primary">
+              Submit
+            </button>
+          </form>
+        </ng-container>
 
         <xstate-create-transaction-button
           [connection]="(connection$ | async) ?? null"
@@ -90,6 +109,49 @@ export class AppComponent implements OnInit {
   readonly transaction$ = this._transaction.asObservable();
   readonly signature$ = this._signature.asObservable();
 
+  private readonly _selectedInstruction =
+    new BehaviorSubject<IdlInstruction | null>(null);
+  readonly selectedInstruction$ = this._selectedInstruction.asObservable();
+  form = new FormGroup({});
+  model = {};
+  readonly fields$: Observable<FormlyFieldConfig[]> =
+    this.selectedInstruction$.pipe(
+      map((selectedInstruction) => {
+        if (selectedInstruction === null) {
+          return [];
+        }
+
+        return [
+          {
+            key: 'accounts',
+            templateOptions: { label: 'Accounts' },
+            fieldGroup: selectedInstruction.instruction.accounts.map(
+              (account) => ({
+                key: account.name,
+                type: 'input',
+                templateOptions: {
+                  required: true,
+                  placeholder: account.name,
+                },
+              })
+            ),
+          },
+          {
+            key: 'args',
+            templateOptions: { label: 'Args' },
+            fieldGroup: selectedInstruction.instruction.args.map((arg) => ({
+              key: arg.name,
+              type: 'input',
+              templateOptions: {
+                required: true,
+                placeholder: arg.name,
+              },
+            })),
+          },
+        ];
+      })
+    );
+
   constructor(
     private readonly _connectionStore: ConnectionStore,
     private readonly _walletStore: WalletStore
@@ -101,7 +163,7 @@ export class AppComponent implements OnInit {
   }
 
   onInstructionSelected(instruction: IdlInstruction) {
-    console.log(instruction);
+    this._selectedInstruction.next(instruction);
   }
 
   onTransactionCreated(transaction: Transaction) {
@@ -118,5 +180,9 @@ export class AppComponent implements OnInit {
 
   onTransactionConfirmed() {
     console.log('confirmed');
+  }
+
+  onSubmit(model: any) {
+    console.log(model);
   }
 }
