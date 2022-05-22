@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, ValidationErrors } from '@angular/forms';
 import { ConnectionStore, WalletStore } from '@heavy-duty/wallet-adapter';
 import { FormlyFieldConfig } from '@ngx-formly/core';
 import { AnchorProvider, Program, Wallet } from '@project-serum/anchor';
@@ -14,10 +14,21 @@ import {
   TransactionSignature,
 } from '@solana/web3.js';
 import { BN } from 'bn.js';
-import { snake } from 'case';
+import { capital, snake } from 'case';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { IdlInstruction } from './instruction-autocomplete/instruction-autocomplete.component';
 import { isNotNull } from './utils';
+
+export function PublicKeyValidator(
+  control: FormControl
+): ValidationErrors | null {
+  try {
+    new PublicKey(control.value);
+    return null;
+  } catch (error) {
+    return { publicKey: true };
+  }
+}
 
 @Component({
   selector: 'xstate-root',
@@ -144,8 +155,27 @@ export class AppComponent implements OnInit {
                 key: account.name,
                 type: 'input',
                 templateOptions: {
-                  required: true,
+                  label: capital(account.name),
                   placeholder: account.name,
+                  description: `Enter Public Key for account ${account.name}.`,
+                  required: true,
+                },
+                validators: {
+                  required: {
+                    expression: (control: FormControl) =>
+                      control.value !== null,
+                    message: (_: unknown, field: FormlyFieldConfig) =>
+                      `"${capital(
+                        field.key?.toString() ?? 'unknown'
+                      )}" is mandatory.`,
+                  },
+                  publicKey: {
+                    expression: (control: FormControl) =>
+                      control.value !== null &&
+                      PublicKeyValidator(control) === null,
+                    message: (_: unknown, field: FormlyFieldConfig) =>
+                      `"${field.formControl?.value}" is not a valid Public Key.`,
+                  },
                 },
               })
             ),
