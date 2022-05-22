@@ -1,0 +1,27 @@
+{
+  "root": "apps/ecosystem",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@danmt/nx-anchor:build",
+      "options": {
+        "projectPath": "apps/ecosystem",
+        "monitor": true
+      }
+    },
+    "test": {
+      "executor": "@danmt/nx-anchor:test",
+      "options": {
+        "projectPath": "apps/ecosystem",
+        "monitor": true
+      }
+    },
+    "deploy": {
+      "executor": "@danmt/nx-anchor:deploy",
+      "options": {
+        "projectPath": "apps/ecosystem",
+        "monitor": true
+      }
+    }
+  }
+}

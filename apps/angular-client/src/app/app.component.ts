@@ -2,14 +2,19 @@ import { Component, OnInit } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { ConnectionStore, WalletStore } from '@heavy-duty/wallet-adapter';
 import { FormlyFieldConfig } from '@ngx-formly/core';
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { AnchorProvider, Program, Wallet } from '@project-serum/anchor';
+import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
 import {
+  Connection,
   Keypair,
   LAMPORTS_PER_SOL,
+  PublicKey,
   SystemProgram,
   Transaction,
   TransactionSignature,
 } from '@solana/web3.js';
+import { BN } from 'bn.js';
+import { snake } from 'case';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { IdlInstruction } from './instruction-autocomplete/instruction-autocomplete.component';
 import { isNotNull } from './utils';
@@ -29,21 +34,27 @@ import { isNotNull } from './utils';
           (instructionSelected)="onInstructionSelected($event)"
         ></xstate-instruction-autocomplete>
 
-        <ng-container *ngIf="fields$ | async as fields">
-          <form
-            [formGroup]="form"
-            (ngSubmit)="onSubmit(model)"
-            *ngIf="fields.length > 0"
+        <ng-container *ngIf="connection$ | async as connection">
+          <ng-container
+            *ngIf="selectedInstruction$ | async as selectedInstruction"
           >
-            <formly-form
-              [form]="form"
-              [fields]="fields"
-              [model]="model"
-            ></formly-form>
-            <button type="submit" mat-raised-button color="primary">
-              Submit
-            </button>
-          </form>
+            <ng-container *ngIf="fields$ | async as fields">
+              <form
+                [formGroup]="form"
+                (ngSubmit)="onSubmit(connection, model, selectedInstruction)"
+                *ngIf="fields.length > 0 && selectedInstruction !== null"
+              >
+                <formly-form
+                  [form]="form"
+                  [fields]="fields"
+                  [model]="model"
+                ></formly-form>
+                <button type="submit" mat-raised-button color="primary">
+                  Submit
+                </button>
+              </form>
+            </ng-container>
+          </ng-container>
         </ng-container>
 
         <xstate-create-transaction-button
@@ -113,7 +124,10 @@ export class AppComponent implements OnInit {
     new BehaviorSubject<IdlInstruction | null>(null);
   readonly selectedInstruction$ = this._selectedInstruction.asObservable();
   form = new FormGroup({});
-  model = {};
+  model = {
+    accounts: {},
+    args: {},
+  };
   readonly fields$: Observable<FormlyFieldConfig[]> =
     this.selectedInstruction$.pipe(
       map((selectedInstruction) => {
@@ -182,7 +196,74 @@ export class AppComponent implements OnInit {
     console.log('confirmed');
   }
 
-  onSubmit(model: any) {
-    console.log(model);
+  async onSubmit(
+    connection: Connection,
+    model: {
+      accounts: { [accountName: string]: string };
+      args: { [argName: string]: string };
+    },
+    selectedInstruction: IdlInstruction
+  ) {
+    try {
+      const { IDL, PROGRAM_ID } = await import(
+        `../assets/idls/${selectedInstruction.namespace}/${snake(
+          selectedInstruction.program
+        )}`
+      );
+      const provider = new AnchorProvider(
+        connection,
+        {} as Wallet,
+        AnchorProvider.defaultOptions()
+      );
+      const program = new Program(IDL, PROGRAM_ID, provider);
+
+      const parsedArgs = Object.keys(model.args).reduce((args, argName) => {
+        const argType = selectedInstruction.instruction.args.find(
+          (selectedArg) => selectedArg.name === argName
+        );
+
+        if (argType === undefined) {
+          return args;
+        }
+
+        if (typeof argType.type === 'string') {
+          switch (argType.type) {
+            case 'u8':
+            case 'u16':
+            case 'u32': {
+              return [...args, Number(model.args[argName])];
+            }
+            case 'u64': {
+              return [...args, new BN(model.args[argName])];
+            }
+            case 'publicKey': {
+              return [...args, new PublicKey(model.args[argName])];
+            }
+            default:
+              return [...args, model.args[argName]];
+          }
+        } else {
+          return [...args, null];
+        }
+      }, [] as unknown[]);
+
+      const parsedAccounts = Object.keys(model.accounts).reduce(
+        (accounts, accountName) => ({
+          ...accounts,
+          [accountName]: new PublicKey(model.accounts[accountName]),
+        }),
+        {}
+      );
+
+      const instruction = await program.methods[
+        selectedInstruction.instruction.name
+      ](...parsedArgs)
+        .accounts(parsedAccounts)
+        .instruction();
+
+      console.log(instruction);
+    } catch (error) {
+      console.log({ error });
+    }
   }
 }

@@ -1,10 +1,10 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { map, Observable, startWith } from 'rxjs';
-import associatedTokenAccountIdl from '../../assets/idls/solana/associated-token-account.json';
-import tokenProgramIdl from '../../assets/idls/solana/token-program.json';
+import { IDL as TokenProgramIDL } from '../../assets/idls/solana/token_program';
 
 export interface IdlInstruction {
+  namespace: string;
   program: string;
   instruction: {
     name: string;
@@ -22,6 +22,12 @@ export interface IdlInstruction {
           name: string;
           type: {
             defined: string;
+          };
+        }
+      | {
+          name: string;
+          type: {
+            option: string;
           };
         }
     )[];
@@ -62,12 +68,9 @@ export interface IdlInstruction {
 export class InstructionAutocompleteComponent implements OnInit {
   searchControl = new FormControl();
   options = [
-    ...tokenProgramIdl.instructions.map((instruction) => ({
-      program: tokenProgramIdl.name,
-      instruction,
-    })),
-    ...associatedTokenAccountIdl.instructions.map((instruction) => ({
-      program: associatedTokenAccountIdl.name,
+    ...TokenProgramIDL.instructions.map((instruction) => ({
+      namespace: 'solana',
+      program: TokenProgramIDL.name,
       instruction,
     })),
   ];
