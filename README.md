@@ -4,9 +4,58 @@ This project intention is to explore a combination of XState, Angular and Solana
 
 ## Create transaction
 
-Connection and fee payer are provided as `@Input` properties. Instructions can be added dynamically by the user. We download the IDLs from [native-to-anchor](https://github.com/acheroncrypto/native-to-anchor/tree/master/anchor/solana) and store them in the assets folder. Using the instruction data from the IDL generate a form structure that can be used by [ngx-formly](https://github.com/ngx-formly/ngx-formly) to generate a form ready to use.
+Creating a transaction is a process that involves knowing about all the programs available, this has a dynamic nature and we're using IDLs and Anchor coders to achieve a UX for composability never seen before.
 
-Each instruction belongs to a program, using an autocomplete field the user can easily navigate through the available instructions. When the user submits the form, the instruction is added to the list, the form and autocomplete states are cleared.
+To make this progressively better, we're using a plugin-based architecture that hopefully can grow into something move more re-usable.
+
+### Plugin Setup
+
+The transaction builder allows you to compose transactions with instructions of multiple open-source and verified protocols. In order to support the growth of the Solana ecosystem, each program integration should be treated as a plugin.
+
+Using a Module with the forRoot static method developers can configure the instructions available. Each plugin is made of a class that's responsible of everything related to that program.
+
+#### Must-haves
+
+- Developers should be able to list all the instructions available.
+- Developers should be create a TransactionInstruction given a namespace, a program and a model.
+- Developers should be able to create a formly configuration given a namespace, a program and an instruction.
+
+#### Plugin life-cycle
+
+Developers add all the desired plugins during app initialization, onInit the app component calls `PluginService.start()` which initializes all the plugins available. At this point there's a `PluginService.instructions` property that holds all the instructions available.
+
+Plugins implement the `PluginInterface` that looks like:
+
+```typescript
+interface PluginInterface {
+  namespace: string;
+  program: string;
+  programId: string;
+  instructions: IdlInstruction[]; // Yet to be properly defined
+  getInstruction: (instructionName: string) => IdlInstruction | null;
+  getTransactionInstruction: (
+    instructionName: string,
+    model: {
+      args: { [argName: string]: string };
+      accounts: { [accountName: string]: string };
+    }
+  ) => TransactionInstruction | null;
+}
+```
+
+And the PluginService implements the following interface:
+
+```typescript
+interface PluginServiceInterface {
+  plugins: PluginInterface[];
+  registerAll: (plugins: PluginInterface[]) => void;
+  getPlugin: (namespace: string, program: string) => PluginInterface | null;
+}
+```
+
+Generating the Formly Fields Configuration is responsability of a method called `createInstructionFieldsConfiguration` that receives the arguments and accounts of the instruction and returns an object that matches the form configuration. In order to get the required information, the developer uses `getPlugin` in conjunction with `getInstruction`. With [ngx-formly](https://github.com/ngx-formly/ngx-formly) we generate a form ready to use.
+
+Once an Instruction's form is submitted, the output model is transformed into a `TransactionInstruction` by using `getPlugin` and `getTransactionInstruction`.
 
 When the transaction is done the user clicks "Create Transaction", this fetches the latest blockhash and adds it to the transaction. After finished, the Signing phase starts.
 

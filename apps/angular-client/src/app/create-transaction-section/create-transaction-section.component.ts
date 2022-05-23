@@ -2,7 +2,7 @@ import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { ConnectionStore, WalletStore } from '@heavy-duty/wallet-adapter';
 import { FormlyFieldConfig } from '@ngx-formly/core';
-import { Connection, Transaction } from '@solana/web3.js';
+import { Transaction } from '@solana/web3.js';
 import {
   BehaviorSubject,
   combineLatest,
@@ -13,8 +13,8 @@ import {
   take,
   takeUntil,
 } from 'rxjs';
+import { PluginsService } from '../plugins';
 import { isNotNull, toFormlyFields } from '../utils';
-import { toTransactionInstruction } from '../utils/to-transaction-instruction';
 import { CreateTransactionSectionStore } from './create-transaction-section.store';
 import { InstructionOption } from './instruction-autocomplete/instruction-autocomplete.component';
 
@@ -28,28 +28,22 @@ import { InstructionOption } from './instruction-autocomplete/instruction-autoco
         (instructionSelected)="onInstructionSelected($event)"
       ></xstate-instruction-autocomplete>
 
-      <ng-container *ngIf="connection$ | async as connection">
-        <ng-container
-          *ngIf="selectedInstruction$ | async as selectedInstruction"
-        >
-          <ng-container *ngIf="fields$ | async as fields">
-            <form
-              [formGroup]="form"
-              (ngSubmit)="
-                onAddInstruction(connection, model, selectedInstruction)
-              "
-              *ngIf="fields.length > 0 && selectedInstruction !== null"
-            >
-              <formly-form
-                [form]="form"
-                [fields]="fields"
-                [model]="model"
-              ></formly-form>
-              <button type="submit" mat-raised-button color="primary">
-                Submit
-              </button>
-            </form>
-          </ng-container>
+      <ng-container *ngIf="selectedInstruction$ | async as selectedInstruction">
+        <ng-container *ngIf="fields$ | async as fields">
+          <form
+            *ngIf="fields.length > 0 && selectedInstruction !== null"
+            [formGroup]="form"
+            (ngSubmit)="onAddInstruction(model, selectedInstruction)"
+          >
+            <formly-form
+              [form]="form"
+              [fields]="fields"
+              [model]="model"
+            ></formly-form>
+            <button type="submit" mat-raised-button color="primary">
+              Submit
+            </button>
+          </form>
         </ng-container>
       </ng-container>
 
@@ -91,6 +85,7 @@ export class CreateTransactionSectionComponent implements OnInit {
   constructor(
     private readonly _walletStore: WalletStore,
     private readonly _connectionStore: ConnectionStore,
+    private readonly _pluginsService: PluginsService,
     private readonly _createTransactionSectionStore: CreateTransactionSectionStore
   ) {}
 
@@ -126,30 +121,26 @@ export class CreateTransactionSectionComponent implements OnInit {
   }
 
   async onAddInstruction(
-    connection: Connection,
     model: {
       accounts: { [accountName: string]: string };
       args: { [argName: string]: string };
     },
     { namespace, program, instruction }: InstructionOption
   ) {
-    try {
-      const transactionInstruction = await toTransactionInstruction(
-        connection,
-        model,
-        namespace,
-        program,
-        instruction
-      );
+    const transactionInstruction =
+      this._pluginsService
+        .getPlugin(namespace, program)
+        ?.getTransactionInstruction(instruction.name, model) ?? null;
 
-      this._createTransactionSectionStore.addInstruction(
-        combineLatest({
-          service: this._createTransactionSectionStore.service$,
-          instruction: of(transactionInstruction),
-        }).pipe(take(1))
-      );
-    } catch (error) {
-      console.log({ error });
+    if (transactionInstruction === null) {
+      throw new Error('Invalid instruction.');
     }
+
+    this._createTransactionSectionStore.addInstruction(
+      combineLatest({
+        service: this._createTransactionSectionStore.service$,
+        instruction: of(transactionInstruction),
+      }).pipe(take(1))
+    );
   }
 }

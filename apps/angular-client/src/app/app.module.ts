@@ -8,6 +8,7 @@ import { FormlyMaterialModule } from '@ngx-formly/material';
 import { AppComponent } from './app.component';
 import { ConfirmTransactionButtonModule } from './confirm-transaction-button';
 import { CreateTransactionSectionModule } from './create-transaction-section/create-transaction-section.module';
+import { PluginModule, TokenPlugin } from './plugins';
 import { SendTransactionButtonModule } from './send-transaction-button';
 import { SignTransactionButtonModule } from './sign-transaction-button';
 
@@ -26,6 +27,7 @@ import { SignTransactionButtonModule } from './sign-transaction-button';
     FormlyModule.forRoot(),
     FormlyMaterialModule,
     MatButtonModule,
+    PluginModule.forRoot([new TokenPlugin()]),
   ],
   bootstrap: [AppComponent],
 })

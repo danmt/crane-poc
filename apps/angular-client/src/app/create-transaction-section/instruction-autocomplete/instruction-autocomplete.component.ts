@@ -1,7 +1,7 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { map, Observable, startWith } from 'rxjs';
-import { IDL as TokenProgramIDL } from '../../../assets/idls/solana/token_program';
+import { PluginsService } from '../../plugins';
 import { IdlInstruction } from '../../utils';
 
 export interface InstructionOption {
@@ -43,16 +43,29 @@ export interface InstructionOption {
 })
 export class InstructionAutocompleteComponent implements OnInit {
   searchControl = new FormControl();
-  options = [
-    ...TokenProgramIDL.instructions.map((instruction) => ({
-      namespace: 'solana',
-      program: TokenProgramIDL.name,
-      instruction,
-    })),
-  ];
+  options = this._pluginsService.plugins
+    .map((plugin) => ({
+      namespace: plugin.namespace,
+      program: plugin.program,
+      instructions: plugin.instructions,
+    }))
+    .reduce(
+      (options: InstructionOption[], plugin) => [
+        ...options,
+        ...plugin.instructions.map((instruction) => ({
+          namespace: plugin.namespace,
+          program: plugin.program,
+          instruction,
+        })),
+      ],
+      []
+    );
+
   filteredOptions: Observable<InstructionOption[]> | null = null;
 
   @Output() instructionSelected = new EventEmitter<InstructionOption>();
+
+  constructor(private readonly _pluginsService: PluginsService) {}
 
   ngOnInit() {
     this.filteredOptions = this.searchControl.valueChanges.pipe(

@@ -1,10 +1,4 @@
-import { PublicKey } from '@solana/web3.js';
-
-export const PROGRAM_ID = new PublicKey(
-  'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'
-);
-
-export type ProgramType = {
+export type TokenProgram = {
   version: '0.1.0';
   name: 'token_program';
   instructions: [
@@ -612,7 +606,7 @@ export type ProgramType = {
   ];
 };
 
-export const IDL: ProgramType = {
+export const IDL: TokenProgram = {
   version: '0.1.0',
   name: 'token_program',
   instructions: [
