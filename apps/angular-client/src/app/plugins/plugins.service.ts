@@ -1,7 +1,5 @@
-import { Injectable } from '@angular/core';
 import { PluginInterface, PluginsServiceInterface } from './types';
 
-@Injectable()
 export class PluginsService implements PluginsServiceInterface {
   plugins: PluginInterface[] = [];
 
