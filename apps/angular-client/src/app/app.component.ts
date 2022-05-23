@@ -1,34 +1,20 @@
 import { Component, OnInit } from '@angular/core';
-import { FormControl, FormGroup, ValidationErrors } from '@angular/forms';
+import { FormGroup } from '@angular/forms';
 import { ConnectionStore, WalletStore } from '@heavy-duty/wallet-adapter';
 import { FormlyFieldConfig } from '@ngx-formly/core';
-import { AnchorProvider, Program, Wallet } from '@project-serum/anchor';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
 import {
   Connection,
   Keypair,
   LAMPORTS_PER_SOL,
-  PublicKey,
   SystemProgram,
   Transaction,
   TransactionSignature,
 } from '@solana/web3.js';
-import { BN } from 'bn.js';
-import { capital, snake } from 'case';
 import { BehaviorSubject, map, Observable } from 'rxjs';
-import { IdlInstruction } from './instruction-autocomplete/instruction-autocomplete.component';
-import { isNotNull } from './utils';
-
-export function PublicKeyValidator(
-  control: FormControl
-): ValidationErrors | null {
-  try {
-    new PublicKey(control.value);
-    return null;
-  } catch (error) {
-    return { publicKey: true };
-  }
-}
+import { InstructionOption } from './instruction-autocomplete/instruction-autocomplete.component';
+import { isNotNull, toFormlyFields } from './utils';
+import { toTransactionInstruction } from './utils/to-transaction-instruction';
 
 @Component({
   selector: 'xstate-root',
@@ -132,7 +118,7 @@ export class AppComponent implements OnInit {
   readonly signature$ = this._signature.asObservable();
 
   private readonly _selectedInstruction =
-    new BehaviorSubject<IdlInstruction | null>(null);
+    new BehaviorSubject<InstructionOption | null>(null);
   readonly selectedInstruction$ = this._selectedInstruction.asObservable();
   form = new FormGroup({});
   model = {
@@ -141,59 +127,11 @@ export class AppComponent implements OnInit {
   };
   readonly fields$: Observable<FormlyFieldConfig[]> =
     this.selectedInstruction$.pipe(
-      map((selectedInstruction) => {
-        if (selectedInstruction === null) {
-          return [];
-        }
-
-        return [
-          {
-            key: 'accounts',
-            templateOptions: { label: 'Accounts' },
-            fieldGroup: selectedInstruction.instruction.accounts.map(
-              (account) => ({
-                key: account.name,
-                type: 'input',
-                templateOptions: {
-                  label: capital(account.name),
-                  placeholder: account.name,
-                  description: `Enter Public Key for account ${account.name}.`,
-                  required: true,
-                },
-                validators: {
-                  required: {
-                    expression: (control: FormControl) =>
-                      control.value !== null,
-                    message: (_: unknown, field: FormlyFieldConfig) =>
-                      `"${capital(
-                        field.key?.toString() ?? 'unknown'
-                      )}" is mandatory.`,
-                  },
-                  publicKey: {
-                    expression: (control: FormControl) =>
-                      control.value !== null &&
-                      PublicKeyValidator(control) === null,
-                    message: (_: unknown, field: FormlyFieldConfig) =>
-                      `"${field.formControl?.value}" is not a valid Public Key.`,
-                  },
-                },
-              })
-            ),
-          },
-          {
-            key: 'args',
-            templateOptions: { label: 'Args' },
-            fieldGroup: selectedInstruction.instruction.args.map((arg) => ({
-              key: arg.name,
-              type: 'input',
-              templateOptions: {
-                required: true,
-                placeholder: arg.name,
-              },
-            })),
-          },
-        ];
-      })
+      map((selectedInstruction) =>
+        selectedInstruction === null
+          ? []
+          : toFormlyFields(selectedInstruction.instruction)
+      )
     );
 
   constructor(
@@ -206,7 +144,7 @@ export class AppComponent implements OnInit {
     this._connectionStore.setEndpoint('http://localhost:8899');
   }
 
-  onInstructionSelected(instruction: IdlInstruction) {
+  onInstructionSelected(instruction: InstructionOption) {
     this._selectedInstruction.next(instruction);
   }
 
@@ -232,66 +170,18 @@ export class AppComponent implements OnInit {
       accounts: { [accountName: string]: string };
       args: { [argName: string]: string };
     },
-    selectedInstruction: IdlInstruction
+    { namespace, program, instruction }: InstructionOption
   ) {
     try {
-      const { IDL, PROGRAM_ID } = await import(
-        `../assets/idls/${selectedInstruction.namespace}/${snake(
-          selectedInstruction.program
-        )}`
-      );
-      const provider = new AnchorProvider(
+      const transactionInstruction = await toTransactionInstruction(
         connection,
-        {} as Wallet,
-        AnchorProvider.defaultOptions()
-      );
-      const program = new Program(IDL, PROGRAM_ID, provider);
-
-      const parsedArgs = Object.keys(model.args).reduce((args, argName) => {
-        const argType = selectedInstruction.instruction.args.find(
-          (selectedArg) => selectedArg.name === argName
-        );
-
-        if (argType === undefined) {
-          return args;
-        }
-
-        if (typeof argType.type === 'string') {
-          switch (argType.type) {
-            case 'u8':
-            case 'u16':
-            case 'u32': {
-              return [...args, Number(model.args[argName])];
-            }
-            case 'u64': {
-              return [...args, new BN(model.args[argName])];
-            }
-            case 'publicKey': {
-              return [...args, new PublicKey(model.args[argName])];
-            }
-            default:
-              return [...args, model.args[argName]];
-          }
-        } else {
-          return [...args, null];
-        }
-      }, [] as unknown[]);
-
-      const parsedAccounts = Object.keys(model.accounts).reduce(
-        (accounts, accountName) => ({
-          ...accounts,
-          [accountName]: new PublicKey(model.accounts[accountName]),
-        }),
-        {}
+        model,
+        namespace,
+        program,
+        instruction
       );
 
-      const instruction = await program.methods[
-        selectedInstruction.instruction.name
-      ](...parsedArgs)
-        .accounts(parsedAccounts)
-        .instruction();
-
-      console.log(instruction);
+      console.log(transactionInstruction);
     } catch (error) {
       console.log({ error });
     }

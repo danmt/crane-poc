@@ -3,7 +3,7 @@ import { FormControl } from '@angular/forms';
 import { map, Observable, startWith } from 'rxjs';
 import { IDL as TokenProgramIDL } from '../../assets/idls/solana/token_program';
 
-export interface IdlInstruction {
+export interface InstructionOption {
   namespace: string;
   program: string;
   instruction: {
@@ -74,9 +74,9 @@ export class InstructionAutocompleteComponent implements OnInit {
       instruction,
     })),
   ];
-  filteredOptions: Observable<IdlInstruction[]> | null = null;
+  filteredOptions: Observable<InstructionOption[]> | null = null;
 
-  @Output() instructionSelected = new EventEmitter<IdlInstruction>();
+  @Output() instructionSelected = new EventEmitter<InstructionOption>();
 
   ngOnInit() {
     this.filteredOptions = this.searchControl.valueChanges.pipe(
@@ -85,7 +85,7 @@ export class InstructionAutocompleteComponent implements OnInit {
     );
   }
 
-  private _filter(value: string | IdlInstruction | null) {
+  private _filter(value: string | InstructionOption | null) {
     if (value === null) {
       return this.options;
     } else if (typeof value === 'string') {
@@ -103,11 +103,11 @@ export class InstructionAutocompleteComponent implements OnInit {
     }
   }
 
-  onInstructionSelected(instruction: IdlInstruction) {
+  onInstructionSelected(instruction: InstructionOption) {
     this.instructionSelected.emit(instruction);
   }
 
-  displayWith(data: IdlInstruction | null) {
+  displayWith(data: InstructionOption | null) {
     return data ? data.program + ' ' + data.instruction.name : '';
   }
 }
