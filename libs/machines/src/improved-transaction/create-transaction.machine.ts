@@ -13,23 +13,30 @@ type CreateTransactionEvent = EventType<'createTransaction'> &
     feePayer: PublicKey;
     instructions: TransactionInstruction[];
   }>;
-type BuildTransactionEvent = EventType<'buildTransaction'> &
-  EventValue<{
-    feePayer: PublicKey;
-    instructions: TransactionInstruction[];
-  }>;
+type BuildTransactionEvent = EventType<'buildTransaction'>;
 type RpcRequestSuccess = EventType<'Rpc Request Machine.Request succeeded'> &
   EventData<{
     blockhash: string;
     latestValidBlockHeight: number;
   }>;
 type RestartMachineEvent = EventType<'restartMachine'>;
+type SetFeePayerEvent = EventType<'setFeePayer'> & EventValue<PublicKey>;
+type AddInstructionEvent = EventType<'addInstruction'> &
+  EventValue<TransactionInstruction>;
+type RemoveInstructionEvent = EventType<'removeInstruction'> &
+  EventValue<number>;
+type OrganizeInstructionsEvent = EventType<'organizeInstructions'> &
+  EventValue<TransactionInstruction[]>;
 
 export type CreateTransactionMachineEvent =
   | CreateTransactionEvent
   | BuildTransactionEvent
   | RpcRequestSuccess
-  | RestartMachineEvent;
+  | RestartMachineEvent
+  | SetFeePayerEvent
+  | AddInstructionEvent
+  | RemoveInstructionEvent
+  | OrganizeInstructionsEvent;
 
 export const createTransactionMachineFactory = (
   connection: Connection,
@@ -45,7 +52,7 @@ export const createTransactionMachineFactory = (
       fireAndForget: true,
     });
 
-  /** @xstate-layout N4IgpgJg5mDOIC5QGEBOYCGAXMACAKqhgHawYDGWAlgPbG4CyFAFlcWAHQCSEANmAGJy6bGEIkylWsUSgADjVhVqdWSAAeiALQAWAKwAGDnoCMAdh06AHAb0AmPVZ1mzAGhABPbXYBsZjga2ZiYmBlYAnLY6JgC+Me5omDgERKQUKvRM5Kzs3HyCagpKGWqaCFo+DhwWdjoAzGbhdTo+PuF27l7ldTYcVqF1fiZ1BpVmPnEJIsniaVJ0jCxsnABiYFjZbFC4vKKwWLgARrw05ADWzBiwzAIASnLkuLdgAI4ArnAHWTmcz++fuFgb3I5DAkEghUUymkpW8eh8HHCfnqBnCehGVjMTk62gadg4djsVnRdhGDhMLUmIESohSEnS0kWm1yNOoxG2WFSkgyAkObyovAgs25MKQICK0NUYrKZiMIT04SsdT0+lGpisOPKziM-V1FJ0kSiVNZeGFDIW32WHFZW1wnPp82IAkhxVFoDKoSM4wV-WigXGg01WgV+IMhPRrRMdhM4Qsxumpq55syS1yZsduGESUgAnQ+wwqCwlvYLslMml2nqBLCtVJqJVhmJQacXsMssqIzqJkq8ezdLmGSZPw46cHWdEEGdYolJQrCBa+IcxNMOgMZnRBhMeiDq5MBNrXcCbRGfji8RAxBoEDgahN-ZFFtTnB4-FLs-dlb0-jMdjC4TRlSYt2OjNqMAQ+CYSoNAYXY6ESva0qOjLFqs6zMtsuw4PsRwnOclzXG+boaJWjTGO0zguD4Vi1JEbieIgdQcHUioxpudiKiMYQ6AhMxJhmKHWtMtr2gOREzkRZRaL+e6-gav7RuY1htEG9j4lu9TdoqTgUlYPGJg6g4CUhCzjjgECEVKH7zpBHDAVioyxpiioqT+AThg4saKXBen3smQ5WgAInQYAWeWVmNhwFFErKFIwdGdRBpBOrRvCoT2cMdg+cZKbMiF05Qu+xHlD4BrVHB9SNM0rTtEG4TDNUbZbu0hJUWYZ4xEAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QGEBOYCGAXMACAKqhgHawYDGWAlgPbG4CyFAFlcWAHQCSEANmAGJy6bGEIkylWsUSgADjVhVqdWSAAeiALQAWAMwBGDgHZjOnQE4AHACYLegGwGHDgDQgAntqvGbHC842xlaWDpZ6FgC+ke5omDgERKQUKvRM5Kzs3HyCagpKqWqaCFoArA5WHAAMhjpmpjqlOlUW7l4lLsYcQTq2DsaljtY60bEiCeLJUnSMLGycAGJgWBlsULi8orBYuABGvDTkANbMGLDMAgBKcuS4l2AAjgCucDvpmZz3z6+4sE-k5DAkEgeUUymkRUQBj0fgMzSs5QMg2MgWMbW0Ngcfj0VicVVMKPsDj0oxAcVEiQkKWks1WWXJ1GI6ywSUkqQEuyeVF4EEmbIhSBA+XBqkFxV0VkqzSqVT6Fiq0Kc6JKjUq0LspRsTWMeJGMTJ4zwfOpM3e8w4DLWuBZVOmxAEsGWSzAAAUMB4wKhQQUBaBigYgiZSlVehYKgS9HpSsqtMZI90kYYzGGLDrjKSGUbWSa0nN6eMrTapuyMBAIFxSCz-oVBcKa36oTYdP4LDotb4XM4HK1PNpiaUOI4wvYUU4hxnDZTizSzfn4oXs3aBOgALY0ABuYAr21Q1d9QrB9Y0UJhHGcpS7uOaBgsqZjTSMcYMthshgMpk1E-iWdtqVpHwtAsmWtRd2RoVAoBIKgAC8t0rXc7XgWtD33cVjAsDhymCONI0MWoYx8PwAixYJQnCKJ9UzKd+VNPNOEtYCixo+1vRFGQxW0AMjGIqobC1HwDBvOoYx0FxuhlQZSlsTUIgRL8KWNO1-3NRS-2Eb8IGXV4MFQLBZzAVij2KcwiNTCxXyjKxHBsaEY2sBwTBqGo9GaRpgwceSJlAmc6I4VSaXU0RNMM1DEAfDgHFlKwLEGBUdHfNxexKFyuhsKoHG1fE+JqCj9WIGgIDgNQqP82i6U4Hh+BC0UGxKC9mxRaKUVEmobJ7dotFTPRHL0GouwGaKKLGb9qJzZSsiWFZMnWTYcG2PYDmOU5zmq9jaq0GEugMFpMUabazE1GMeg4SUnGcaFTDhRpPJ-acyoAhjmW8mqDx9F7xX48S7HM7aAmsewYyxbEXGDTE9AGJEPMoydStzcq-Oe+hApwCBVshBBHCMfqoplNsYujJKtH6PxXzqQSsVla7oZG2Hxs4AAROgDOQt61uPBA9o4OofofBEnGEwm4W6m9BlJgZLKjG7RqU-S0Y4urzOqWp6gO5p2s4qpSgw4w+vVG8BksaJoiAA */
   return createMachine(
     {
       context: {
@@ -71,12 +78,12 @@ export const createTransactionMachineFactory = (
         Idle: {
           always: {
             cond: 'auto start enabled',
-            target: 'Fetching latest blockhash',
+            target: 'Creating transaction',
           },
           on: {
             createTransaction: {
               actions: 'Save fee payer and instruction in context',
-              target: 'Fetching latest blockhash',
+              target: 'Creating transaction',
             },
           },
         },
@@ -85,19 +92,30 @@ export const createTransactionMachineFactory = (
           on: {
             'Rpc Request Machine.Request succeeded': {
               actions: 'Save latest blockhash in context',
-              target: 'Creating transaction',
+              target: 'Transaction created',
             },
           },
         },
         'Creating transaction': {
           always: {
             cond: 'auto build enabled',
-            target: 'Transaction created',
+            target: 'Fetching latest blockhash',
           },
           on: {
             buildTransaction: {
-              actions: 'Save fee payer and instruction in context',
-              target: 'Transaction created',
+              target: 'Fetching latest blockhash',
+            },
+            setFeePayer: {
+              actions: 'Save fee payer in context',
+            },
+            addInstruction: {
+              actions: 'Add instruction to context',
+            },
+            removeInstruction: {
+              actions: 'Remove instruction from context',
+            },
+            organizeInstructions: {
+              actions: 'Save instruction in new order in context',
             },
           },
         },
@@ -121,21 +139,11 @@ export const createTransactionMachineFactory = (
     },
     {
       actions: {
-        'Start get latest blockhash machine': assign({
-          getLatestBlockhashRef: ({ connection }) =>
-            spawn(getLatestBlockhashMachine(connection), {
-              name: 'get-latest-blockhash',
-            }),
-        }),
-        'Save latest blockhash in context': assign({
-          latestBlockhash: (_, event) => event.data,
-        }),
-        'Save transaction in context': assign({
-          transaction: (context) =>
-            new Transaction({
-              feePayer: context.feePayer,
-              recentBlockhash: context.latestBlockhash?.blockhash,
-            }).add(...(context.instructions ?? [])),
+        'Add instruction to context': assign({
+          instructions: ({ instructions }, event) => [
+            ...(instructions ?? []),
+            event.value,
+          ],
         }),
         'Clear context': assign({
           transaction: (_) => undefined,
@@ -153,9 +161,39 @@ export const createTransactionMachineFactory = (
             return undefined;
           },
         }),
+        'Remove instruction from context': assign({
+          instructions: (context, event) => {
+            const instructions = [...(context.instructions ?? [])];
+            instructions.splice(event.value, 1);
+
+            return instructions;
+          },
+        }),
         'Save fee payer and instruction in context': assign({
           instructions: (_, event) => event.value.instructions,
           feePayer: (_, event) => event.value.feePayer,
+        }),
+        'Save fee payer in context': assign({
+          feePayer: (_, event) => event.value,
+        }),
+        'Save instruction in new order in context': assign({
+          instructions: (_, event) => event.value,
+        }),
+        'Save latest blockhash in context': assign({
+          latestBlockhash: (_, event) => event.data,
+        }),
+        'Save transaction in context': assign({
+          transaction: (context) =>
+            new Transaction({
+              feePayer: context.feePayer,
+              recentBlockhash: context.latestBlockhash?.blockhash,
+            }).add(...(context.instructions ?? [])),
+        }),
+        'Start get latest blockhash machine': assign({
+          getLatestBlockhashRef: ({ connection }) =>
+            spawn(getLatestBlockhashMachine(connection), {
+              name: 'get-latest-blockhash',
+            }),
         }),
       },
       guards: {

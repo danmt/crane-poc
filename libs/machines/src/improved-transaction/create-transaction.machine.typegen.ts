@@ -3,13 +3,15 @@
 export interface Typegen0 {
   '@@xstate/typegen': true;
   eventsCausingActions: {
-    'Save fee payer and instruction in context':
-      | 'createTransaction'
-      | 'buildTransaction';
+    'Save fee payer and instruction in context': 'createTransaction';
     'Save latest blockhash in context': 'Rpc Request Machine.Request succeeded';
+    'Save fee payer in context': 'setFeePayer';
+    'Add instruction to context': 'addInstruction';
+    'Remove instruction from context': 'removeInstruction';
+    'Save instruction in new order in context': 'organizeInstructions';
     'Clear context': 'restartMachine';
-    'Start get latest blockhash machine': 'createTransaction' | '';
-    'Save transaction in context': 'buildTransaction' | '';
+    'Start get latest blockhash machine': 'buildTransaction' | '';
+    'Save transaction in context': 'Rpc Request Machine.Request succeeded';
   };
   internalEvents: {
     '': { type: '' };

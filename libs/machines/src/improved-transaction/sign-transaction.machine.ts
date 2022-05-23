@@ -98,8 +98,10 @@ export const signTransactionMachineFactory = (
         },
       },
       guards: {
-        'signatures done': ({ transaction }) =>
-          transaction?.verifySignatures() ?? false,
+        'signatures done': ({ transaction }) => {
+          console.log(transaction, transaction?.verifySignatures());
+          return transaction?.verifySignatures() ?? false;
+        },
         'valid signer': ({ transaction }, event) => {
           if (transaction === undefined) {
             return false;
@@ -109,6 +111,8 @@ export const signTransactionMachineFactory = (
           const accountIndex = message.accountKeys.findIndex((accountKey) =>
             accountKey.equals(event.value)
           );
+
+          console.log({ message });
 
           return message.isAccountSigner(accountIndex);
         },

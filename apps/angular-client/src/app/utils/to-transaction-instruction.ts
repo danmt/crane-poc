@@ -1,39 +1,8 @@
-import { AnchorProvider, Program, Wallet } from '@project-serum/anchor';
+import { AnchorProvider, Program, Spl, Wallet } from '@project-serum/anchor';
 import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { BN } from 'bn.js';
 import { snake } from 'case';
 import { IdlInstruction } from './types';
-
-export interface InstructionOption {
-  namespace: string;
-  program: string;
-  instruction: {
-    name: string;
-    accounts: {
-      name: string;
-      isMut: boolean;
-      isSigner: boolean;
-    }[];
-    args: (
-      | {
-          name: string;
-          type: string;
-        }
-      | {
-          name: string;
-          type: {
-            defined: string;
-          };
-        }
-      | {
-          name: string;
-          type: {
-            option: string;
-          };
-        }
-    )[];
-  };
-}
 
 export const toTransactionInstruction = async (
   connection: Connection,
@@ -64,6 +33,8 @@ export const toTransactionInstruction = async (
       return args;
     }
 
+    console.log(argType);
+
     if (typeof argType.type === 'string') {
       switch (argType.type) {
         case 'u8':
@@ -85,7 +56,7 @@ export const toTransactionInstruction = async (
     }
   }, [] as unknown[]);
 
-  const parsedAccounts = Object.keys(model.accounts).reduce(
+  const parsedAccounts: any = Object.keys(model.accounts).reduce(
     (accounts, accountName) => ({
       ...accounts,
       [accountName]: new PublicKey(model.accounts[accountName]),
@@ -93,7 +64,30 @@ export const toTransactionInstruction = async (
     {}
   );
 
-  return program.methods[instruction.name](...parsedArgs)
+  console.log({ parsedArgs, parsedAccounts });
+
+  const a = Spl.token(provider);
+
+  // Seems like the amount in the token program is not u64 or something weird
+  // there's an issue with the amount.
+
+  const ixAnchor = await a.methods
+    .transfer(...(parsedArgs as any))
+    .accounts({
+      authority: parsedAccounts['authority'],
+      source: parsedAccounts['source'],
+      destination: parsedAccounts['destination'],
+    })
+    .instruction();
+
+  const ixOurs = await program.methods[instruction.name](...parsedArgs)
     .accounts(parsedAccounts)
     .instruction();
+
+  console.log({
+    ixAnchor,
+    ixOurs,
+  });
+
+  return ixOurs;
 };

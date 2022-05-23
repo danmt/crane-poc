@@ -4,35 +4,36 @@ import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { createTransactionServiceFactory } from '@xstate/machines';
 import { combineLatest, filter, map, tap } from 'rxjs';
 import { StateFrom } from 'xstate';
-import { isNotNull, tapEffect } from '../utils';
+import { isNotNull, Option, tapEffect } from '../utils';
 
 type ServiceType = ReturnType<typeof createTransactionServiceFactory>;
 type StateType = StateFrom<ServiceType['machine']>;
-type Option<T> = T | null;
 
 interface ViewModel {
   service: Option<ServiceType>;
   serviceState: Option<StateType>;
   connection: Option<Connection>;
-  feePayer: Option<PublicKey>;
-  instructions: Option<TransactionInstruction[]>;
 }
 
 const initialState: ViewModel = {
   service: null,
   serviceState: null,
   connection: null,
-  feePayer: null,
-  instructions: null,
 };
 
 @Injectable()
-export class CreateTransactionButtonStore extends ComponentStore<ViewModel> {
+export class CreateTransactionSectionStore extends ComponentStore<ViewModel> {
   readonly service$ = this.select(({ service }) => service);
   readonly serviceState$ = this.select(({ serviceState }) => serviceState);
   readonly connection$ = this.select(({ connection }) => connection);
-  readonly feePayer$ = this.select(({ feePayer }) => feePayer);
-  readonly instructions$ = this.select(({ instructions }) => instructions);
+  readonly feePayer$ = this.select(
+    this.serviceState$,
+    (serviceState) => serviceState?.context.feePayer ?? null
+  );
+  readonly instructions$ = this.select(
+    this.serviceState$,
+    (serviceState) => serviceState?.context.instructions ?? null
+  );
   readonly disabled$ = this.select(
     this.serviceState$,
     this.feePayer$,
@@ -41,10 +42,7 @@ export class CreateTransactionButtonStore extends ComponentStore<ViewModel> {
       serviceState === null ||
       feePayer === null ||
       instructions === null ||
-      !serviceState.can({
-        type: 'createTransaction',
-        value: { feePayer, instructions },
-      })
+      !serviceState.can('buildTransaction')
   );
 
   constructor() {
@@ -55,8 +53,8 @@ export class CreateTransactionButtonStore extends ComponentStore<ViewModel> {
         isNotNull,
         map((connection) =>
           createTransactionServiceFactory(connection, {
-            eager: false,
-            autoBuild: true,
+            eager: true,
+            autoBuild: false,
             fireAndForget: false,
           })
         )
@@ -73,20 +71,10 @@ export class CreateTransactionButtonStore extends ComponentStore<ViewModel> {
     );
   }
 
-  readonly setConnection = this.updater<Connection>((state, connection) => ({
-    ...state,
-    connection,
-  }));
-
-  readonly setFeePayer = this.updater<PublicKey>((state, feePayer) => ({
-    ...state,
-    feePayer,
-  }));
-
-  readonly setInstructions = this.updater<TransactionInstruction[]>(
-    (state, instructions) => ({
+  readonly setConnection = this.updater<Option<Connection>>(
+    (state, connection) => ({
       ...state,
-      instructions,
+      connection,
     })
   );
 
@@ -107,22 +95,46 @@ export class CreateTransactionButtonStore extends ComponentStore<ViewModel> {
     tap((service) => service.send('restartMachine'))
   );
 
-  readonly createTransaction = this.effect<{
-    service: Option<ServiceType>;
-    feePayer: Option<PublicKey>;
-    instructions: Option<TransactionInstruction[]>;
-  }>(
-    tap(({ service, feePayer, instructions }) => {
-      if (service === null || feePayer === null || instructions === null) {
+  readonly buildTransaction = this.effect<Option<ServiceType>>(
+    tap((service) => {
+      if (service === null) {
         return;
       }
 
       service.send({
-        type: 'createTransaction',
-        value: {
-          feePayer,
-          instructions,
-        },
+        type: 'buildTransaction',
+      });
+    })
+  );
+
+  readonly addInstruction = this.effect<{
+    service: Option<ServiceType>;
+    instruction: TransactionInstruction;
+  }>(
+    tap(({ service, instruction }) => {
+      if (service === null) {
+        return;
+      }
+
+      service.send({
+        type: 'addInstruction',
+        value: instruction,
+      });
+    })
+  );
+
+  readonly setFeePayer = this.effect<{
+    service: Option<ServiceType>;
+    feePayer: Option<PublicKey>;
+  }>(
+    tap(({ service, feePayer }) => {
+      if (service === null || feePayer === null) {
+        return;
+      }
+
+      service.send({
+        type: 'setFeePayer',
+        value: feePayer,
       });
     })
   );

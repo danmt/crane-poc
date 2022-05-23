@@ -156,11 +156,12 @@ pub struct InitializeMultisig<'info> {
 #[derive(Accounts)]
 pub struct Transfer<'info> {
     /// CHECK: ignore
+    #[account(mut)]
     source: AccountInfo<'info>,
     /// CHECK: ignore
+    #[account(mut)]
     destination: AccountInfo<'info>,
     authority: Signer<'info>,
-    //signer: Signer<'info>,
 }
 
 #[derive(Accounts)]

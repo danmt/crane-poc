@@ -1,20 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { FormGroup } from '@angular/forms';
 import { ConnectionStore, WalletStore } from '@heavy-duty/wallet-adapter';
-import { FormlyFieldConfig } from '@ngx-formly/core';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
-import {
-  Connection,
-  Keypair,
-  LAMPORTS_PER_SOL,
-  SystemProgram,
-  Transaction,
-  TransactionSignature,
-} from '@solana/web3.js';
-import { BehaviorSubject, map, Observable } from 'rxjs';
-import { InstructionOption } from './instruction-autocomplete/instruction-autocomplete.component';
-import { isNotNull, toFormlyFields } from './utils';
-import { toTransactionInstruction } from './utils/to-transaction-instruction';
+import { Transaction, TransactionSignature } from '@solana/web3.js';
+import { BehaviorSubject } from 'rxjs';
 
 @Component({
   selector: 'xstate-root',
@@ -24,44 +12,10 @@ import { toTransactionInstruction } from './utils/to-transaction-instruction';
     </header>
 
     <main>
-      <section class="p-4">
-        <h2>Create transaction</h2>
-
-        <xstate-instruction-autocomplete
-          (instructionSelected)="onInstructionSelected($event)"
-        ></xstate-instruction-autocomplete>
-
-        <ng-container *ngIf="connection$ | async as connection">
-          <ng-container
-            *ngIf="selectedInstruction$ | async as selectedInstruction"
-          >
-            <ng-container *ngIf="fields$ | async as fields">
-              <form
-                [formGroup]="form"
-                (ngSubmit)="onSubmit(connection, model, selectedInstruction)"
-                *ngIf="fields.length > 0 && selectedInstruction !== null"
-              >
-                <formly-form
-                  [form]="form"
-                  [fields]="fields"
-                  [model]="model"
-                ></formly-form>
-                <button type="submit" mat-raised-button color="primary">
-                  Submit
-                </button>
-              </form>
-            </ng-container>
-          </ng-container>
-        </ng-container>
-
-        <xstate-create-transaction-button
-          [connection]="(connection$ | async) ?? null"
-          [feePayer]="(authority$ | async) ?? null"
-          [instructions]="(instructions$ | async) ?? null"
-          (transactionCreated)="onTransactionCreated($event)"
-        >
-        </xstate-create-transaction-button>
-      </section>
+      <xstate-create-transaction-section
+        (transactionCreated)="onTransactionCreated($event)"
+      >
+      </xstate-create-transaction-section>
 
       <section>
         <h2>Sign transaction</h2>
@@ -104,35 +58,8 @@ export class AppComponent implements OnInit {
     new BehaviorSubject<TransactionSignature | null>(null);
   readonly connection$ = this._connectionStore.connection$;
   readonly authority$ = this._walletStore.publicKey$;
-  readonly instructions$ = this.authority$.pipe(
-    isNotNull,
-    map((authority) => [
-      SystemProgram.transfer({
-        fromPubkey: authority,
-        toPubkey: Keypair.generate().publicKey,
-        lamports: 0.1 * LAMPORTS_PER_SOL,
-      }),
-    ])
-  );
   readonly transaction$ = this._transaction.asObservable();
   readonly signature$ = this._signature.asObservable();
-
-  private readonly _selectedInstruction =
-    new BehaviorSubject<InstructionOption | null>(null);
-  readonly selectedInstruction$ = this._selectedInstruction.asObservable();
-  form = new FormGroup({});
-  model = {
-    accounts: {},
-    args: {},
-  };
-  readonly fields$: Observable<FormlyFieldConfig[]> =
-    this.selectedInstruction$.pipe(
-      map((selectedInstruction) =>
-        selectedInstruction === null
-          ? []
-          : toFormlyFields(selectedInstruction.instruction)
-      )
-    );
 
   constructor(
     private readonly _connectionStore: ConnectionStore,
@@ -144,11 +71,8 @@ export class AppComponent implements OnInit {
     this._connectionStore.setEndpoint('http://localhost:8899');
   }
 
-  onInstructionSelected(instruction: InstructionOption) {
-    this._selectedInstruction.next(instruction);
-  }
-
   onTransactionCreated(transaction: Transaction) {
+    console.log('transaction created: ', transaction);
     this._transaction.next(transaction);
   }
 
@@ -162,28 +86,5 @@ export class AppComponent implements OnInit {
 
   onTransactionConfirmed() {
     console.log('confirmed');
-  }
-
-  async onSubmit(
-    connection: Connection,
-    model: {
-      accounts: { [accountName: string]: string };
-      args: { [argName: string]: string };
-    },
-    { namespace, program, instruction }: InstructionOption
-  ) {
-    try {
-      const transactionInstruction = await toTransactionInstruction(
-        connection,
-        model,
-        namespace,
-        program,
-        instruction
-      );
-
-      console.log(transactionInstruction);
-    } catch (error) {
-      console.log({ error });
-    }
   }
 }

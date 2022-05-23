@@ -91,12 +91,12 @@ export type ProgramType = {
       accounts: [
         {
           name: 'source';
-          isMut: false;
+          isMut: true;
           isSigner: false;
         },
         {
           name: 'destination';
-          isMut: false;
+          isMut: true;
           isSigner: false;
         },
         {
@@ -699,12 +699,12 @@ export const IDL: ProgramType = {
       accounts: [
         {
           name: 'source',
-          isMut: false,
+          isMut: true,
           isSigner: false,
         },
         {
           name: 'destination',
-          isMut: false,
+          isMut: true,
           isSigner: false,
         },
         {

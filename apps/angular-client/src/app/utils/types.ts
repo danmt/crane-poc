@@ -24,3 +24,5 @@ export interface IdlInstruction {
       }
   )[];
 }
+
+export type Option<T> = T | null;

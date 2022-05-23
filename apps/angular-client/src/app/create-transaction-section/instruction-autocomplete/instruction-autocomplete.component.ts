@@ -1,37 +1,13 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { map, Observable, startWith } from 'rxjs';
-import { IDL as TokenProgramIDL } from '../../assets/idls/solana/token_program';
+import { IDL as TokenProgramIDL } from '../../../assets/idls/solana/token_program';
+import { IdlInstruction } from '../../utils';
 
 export interface InstructionOption {
   namespace: string;
   program: string;
-  instruction: {
-    name: string;
-    accounts: {
-      name: string;
-      isMut: boolean;
-      isSigner: boolean;
-    }[];
-    args: (
-      | {
-          name: string;
-          type: string;
-        }
-      | {
-          name: string;
-          type: {
-            defined: string;
-          };
-        }
-      | {
-          name: string;
-          type: {
-            option: string;
-          };
-        }
-    )[];
-  };
+  instruction: IdlInstruction;
 }
 
 @Component({
