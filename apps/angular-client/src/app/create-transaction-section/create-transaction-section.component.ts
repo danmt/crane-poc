@@ -120,7 +120,7 @@ export class CreateTransactionSectionComponent implements OnInit {
     this._selectedInstruction.next(instruction);
   }
 
-  async onAddInstruction(
+  onAddInstruction(
     model: {
       accounts: { [accountName: string]: string };
       args: { [argName: string]: string };

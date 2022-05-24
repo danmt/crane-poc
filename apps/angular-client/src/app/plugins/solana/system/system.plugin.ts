@@ -1,12 +1,12 @@
-import { SplTokenCoder } from '@project-serum/anchor';
+import { BorshCoder } from '@project-serum/anchor';
 import { PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { IdlInstruction, PluginInterface } from '../../types';
-import { IDL } from './token_program';
+import { IDL } from './system_program';
 
-export class TokenPlugin implements PluginInterface {
+export class SystemPlugin implements PluginInterface {
   readonly namespace = 'solana';
-  readonly program = 'token_program';
-  readonly programId = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+  readonly program = 'system_program';
+  readonly programId = '11111111111111111111111111111111';
   readonly instructions = IDL.instructions;
 
   getInstruction(instructionName: string): IdlInstruction | null {
@@ -30,7 +30,7 @@ export class TokenPlugin implements PluginInterface {
       return null;
     }
 
-    const coder = new SplTokenCoder(IDL);
+    const coder = new BorshCoder(IDL); // Borsh coder is not working out-of-the-box
 
     return new TransactionInstruction({
       programId: new PublicKey(this.programId),
