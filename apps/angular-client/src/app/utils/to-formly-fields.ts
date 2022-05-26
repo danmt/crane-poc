@@ -1,8 +1,8 @@
 import { FormControl } from '@angular/forms';
 import { FormlyFieldConfig } from '@ngx-formly/core';
 import { capital } from 'case';
+import { IdlInstruction } from '../plugins';
 import { PublicKeyValidator } from './public-key.validator';
-import { IdlInstruction } from './types';
 
 export const toFormlyFields = (
   instruction: IdlInstruction

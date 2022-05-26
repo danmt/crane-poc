@@ -1,12 +1,11 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { map, Observable, startWith } from 'rxjs';
-import { PluginsService } from '../../plugins';
-import { IdlInstruction } from '../../utils';
+import { IdlInstruction, PluginsService } from '../../plugins';
 
 export interface InstructionOption {
   namespace: string;
-  program: string;
+  name: string;
   instruction: IdlInstruction;
 }
 
@@ -34,7 +33,7 @@ export interface InstructionOption {
             *ngFor="let option of filteredOptions | async"
             [value]="option"
           >
-            {{ option.program }} {{ option.instruction.name }}
+            {{ option.name }} {{ option.instruction.name }}
           </mat-option>
         </mat-autocomplete>
       </mat-form-field>
@@ -46,7 +45,7 @@ export class InstructionAutocompleteComponent implements OnInit {
   options = this._pluginsService.plugins
     .map((plugin) => ({
       namespace: plugin.namespace,
-      program: plugin.program,
+      name: plugin.name,
       instructions: plugin.instructions,
     }))
     .reduce(
@@ -54,7 +53,7 @@ export class InstructionAutocompleteComponent implements OnInit {
         ...options,
         ...plugin.instructions.map((instruction) => ({
           namespace: plugin.namespace,
-          program: plugin.program,
+          name: plugin.name,
           instruction,
         })),
       ],
@@ -83,7 +82,7 @@ export class InstructionAutocompleteComponent implements OnInit {
       return this.options.filter((option) => {
         return segments.every(
           (segment) =>
-            option.program.toLowerCase().includes(segment) ||
+            option.name.toLowerCase().includes(segment) ||
             option.instruction.name.toLowerCase().includes(segment)
         );
       });
@@ -97,6 +96,6 @@ export class InstructionAutocompleteComponent implements OnInit {
   }
 
   displayWith(data: InstructionOption | null) {
-    return data ? data.program + ' ' + data.instruction.name : '';
+    return data ? data.name + ' ' + data.instruction.name : '';
   }
 }

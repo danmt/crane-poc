@@ -24,13 +24,18 @@ export interface IdlInstruction {
           option: string;
         };
       }
+    | {
+        name: string;
+        type: {
+          coption: string;
+        };
+      }
   )[];
 }
 
 export interface PluginInterface {
   namespace: string;
-  program: string;
-  programId: string;
+  name: string;
   instructions: IdlInstruction[];
   getInstruction(instructionName: string): IdlInstruction | null;
   getTransactionInstruction(

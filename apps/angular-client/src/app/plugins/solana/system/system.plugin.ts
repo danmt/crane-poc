@@ -1,13 +1,12 @@
-import { BorshCoder } from '@project-serum/anchor';
+import { AnchorProvider, Native } from '@heavy-duty/anchor';
 import { PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { IdlInstruction, PluginInterface } from '../../types';
-import { IDL } from './system_program';
 
 export class SystemPlugin implements PluginInterface {
-  readonly namespace = 'solana';
-  readonly program = 'system_program';
-  readonly programId = '11111111111111111111111111111111';
-  readonly instructions = IDL.instructions;
+  private readonly program = Native.system({} as AnchorProvider);
+  readonly namespace = 'native';
+  readonly name = this.program.idl.name;
+  readonly instructions = this.program.idl.instructions;
 
   getInstruction(instructionName: string): IdlInstruction | null {
     return (
@@ -30,16 +29,14 @@ export class SystemPlugin implements PluginInterface {
       return null;
     }
 
-    const coder = new BorshCoder(IDL); // Borsh coder is not working out-of-the-box
-
     return new TransactionInstruction({
-      programId: new PublicKey(this.programId),
+      programId: new PublicKey(this.program.programId),
       keys: instruction.accounts.map((account) => ({
         pubkey: new PublicKey(model.accounts[account.name]),
         isSigner: account.isSigner,
         isWritable: account.isMut,
       })),
-      data: coder.instruction.encode(instructionName, model.args),
+      data: this.program.coder.instruction.encode(instructionName, model.args),
     });
   }
 }

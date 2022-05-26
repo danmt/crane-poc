@@ -125,11 +125,11 @@ export class CreateTransactionSectionComponent implements OnInit {
       accounts: { [accountName: string]: string };
       args: { [argName: string]: string };
     },
-    { namespace, program, instruction }: InstructionOption
+    { namespace, name, instruction }: InstructionOption
   ) {
     const transactionInstruction =
       this._pluginsService
-        .getPlugin(namespace, program)
+        .getPlugin(namespace, name)
         ?.getTransactionInstruction(instruction.name, model) ?? null;
 
     if (transactionInstruction === null) {

@@ -1,13 +1,12 @@
-import { SplTokenCoder } from '@project-serum/anchor';
+import { AnchorProvider, Spl } from '@heavy-duty/anchor';
 import { PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { IdlInstruction, PluginInterface } from '../../types';
-import { IDL } from './token_program';
 
 export class TokenPlugin implements PluginInterface {
-  readonly namespace = 'solana';
-  readonly program = 'token_program';
-  readonly programId = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
-  readonly instructions = IDL.instructions;
+  private readonly program = Spl.token({} as AnchorProvider);
+  readonly namespace = 'spl';
+  readonly name = this.program.idl.name;
+  readonly instructions = this.program.idl.instructions;
 
   getInstruction(instructionName: string): IdlInstruction | null {
     return (
@@ -30,16 +29,14 @@ export class TokenPlugin implements PluginInterface {
       return null;
     }
 
-    const coder = new SplTokenCoder(IDL);
-
     return new TransactionInstruction({
-      programId: new PublicKey(this.programId),
+      programId: new PublicKey(this.program.programId),
       keys: instruction.accounts.map((account) => ({
         pubkey: new PublicKey(model.accounts[account.name]),
         isSigner: account.isSigner,
         isWritable: account.isMut,
       })),
-      data: coder.instruction.encode(instructionName, model.args),
+      data: this.program.coder.instruction.encode(instructionName, model.args),
     });
   }
 }
