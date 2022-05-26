@@ -14,13 +14,11 @@ The transaction builder allows you to compose transactions with instructions of 
 
 Using a Module with the forRoot static method developers can configure the instructions available. Each plugin is made of a class that's responsible of everything related to that program.
 
-#### Must-haves
+The main features are listed below:
 
 - Developers should be able to list all the instructions available.
 - Developers should be create a TransactionInstruction given a namespace, a program and a model.
 - Developers should be able to create a formly configuration given a namespace, a program and an instruction.
-
-#### Plugin life-cycle
 
 Developers add all the desired plugins during app initialization, onInit the app component calls `PluginService.start()` which initializes all the plugins available. At this point there's a `PluginService.instructions` property that holds all the instructions available.
 
@@ -29,9 +27,7 @@ Plugins implement the `PluginInterface` that looks like:
 ```typescript
 interface PluginInterface {
   namespace: string;
-  program: string;
-  programId: string;
-  instructions: IdlInstruction[]; // Yet to be properly defined
+  name: string;
   getInstruction: (instructionName: string) => IdlInstruction | null;
   getTransactionInstruction: (
     instructionName: string,
