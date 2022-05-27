@@ -11,43 +11,49 @@ import { BehaviorSubject } from 'rxjs';
       <h1>XState Solana Playground</h1>
     </header>
 
-    <main>
-      <xstate-create-transaction-section
-        (transactionCreated)="onTransactionCreated($event)"
-      >
-      </xstate-create-transaction-section>
-
-      <section>
-        <h2>Sign transaction</h2>
-
-        <xstate-sign-transaction-button
-          [transaction]="transaction$ | async"
-          [signer]="(authority$ | async) ?? null"
-          (transactionSigned)="onTransactionSigned($event)"
+    <div class="flex justify-between">
+      <main class="flex-1">
+        <xstate-create-transaction-section
+          (transactionCreated)="onTransactionCreated($event)"
         >
-        </xstate-sign-transaction-button>
-      </section>
+        </xstate-create-transaction-section>
 
-      <section>
-        <h2>Send transaction</h2>
+        <section>
+          <h2>Sign transaction</h2>
 
-        <xstate-send-transaction-button
-          [transaction]="transaction$ | async"
-          (transactionSent)="onTransactionSent($event)"
-        >
-        </xstate-send-transaction-button>
-      </section>
+          <xstate-sign-transaction-button
+            [transaction]="transaction$ | async"
+            [signer]="(authority$ | async) ?? null"
+            (transactionSigned)="onTransactionSigned($event)"
+          >
+          </xstate-sign-transaction-button>
+        </section>
 
-      <section>
-        <h2>Confirm transaction</h2>
+        <section>
+          <h2>Send transaction</h2>
 
-        <xstate-confirm-transaction-button
-          [signature]="signature$ | async"
-          (transactionConfirmed)="onTransactionConfirmed()"
-        >
-        </xstate-confirm-transaction-button>
-      </section>
-    </main>
+          <xstate-send-transaction-button
+            [transaction]="transaction$ | async"
+            (transactionSent)="onTransactionSent($event)"
+          >
+          </xstate-send-transaction-button>
+        </section>
+
+        <section>
+          <h2>Confirm transaction</h2>
+
+          <xstate-confirm-transaction-button
+            [signature]="signature$ | async"
+            (transactionConfirmed)="onTransactionConfirmed()"
+          >
+          </xstate-confirm-transaction-button>
+        </section>
+      </main>
+
+      <aside class="w-80">
+        <xstate-keypairs-list></xstate-keypairs-list>
+      </aside>
+    </div>
   `,
   styles: [],
   providers: [ConnectionStore, WalletStore],
