@@ -1,5 +1,29 @@
 import { TransactionInstruction } from '@solana/web3.js';
 
+export type IdlInstructionArgument =
+  | {
+      name: string;
+      type: string;
+    }
+  | {
+      name: string;
+      type: {
+        defined: string;
+      };
+    }
+  | {
+      name: string;
+      type: {
+        option: string;
+      };
+    }
+  | {
+      name: string;
+      type: {
+        coption: string;
+      };
+    };
+
 export interface IdlInstruction {
   name: string;
   accounts: {
@@ -7,30 +31,7 @@ export interface IdlInstruction {
     isMut: boolean;
     isSigner: boolean;
   }[];
-  args: (
-    | {
-        name: string;
-        type: string;
-      }
-    | {
-        name: string;
-        type: {
-          defined: string;
-        };
-      }
-    | {
-        name: string;
-        type: {
-          option: string;
-        };
-      }
-    | {
-        name: string;
-        type: {
-          coption: string;
-        };
-      }
-  )[];
+  args: IdlInstructionArgument[];
 }
 
 export interface PluginInterface {
