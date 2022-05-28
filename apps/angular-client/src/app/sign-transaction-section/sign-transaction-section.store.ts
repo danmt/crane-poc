@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core';
-import { WalletStore } from '@heavy-duty/wallet-adapter';
 import { ComponentStore } from '@ngrx/component-store';
-import { PublicKey, Transaction } from '@solana/web3.js';
+import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
 import { signTransactionServiceFactory } from '@xstate/machines';
-import { lastValueFrom, map, tap } from 'rxjs';
+import { map, tap } from 'rxjs';
 import { StateFrom } from 'xstate';
 import { isNotNull, tapEffect } from '../utils';
 
@@ -26,7 +25,7 @@ const initialState: ViewModel = {
 };
 
 @Injectable()
-export class SignTransactionButtonStore extends ComponentStore<ViewModel> {
+export class SignTransactionSectionStore extends ComponentStore<ViewModel> {
   readonly service$ = this.select(({ service }) => service);
   readonly serviceState$ = this.select(({ serviceState }) => serviceState);
   readonly transaction$ = this.select(({ transaction }) => transaction);
@@ -38,34 +37,21 @@ export class SignTransactionButtonStore extends ComponentStore<ViewModel> {
       serviceState === null ||
       signer === null ||
       !serviceState.can({
-        type: 'signTransaction',
-        value: signer,
+        type: 'signTransactionWithWallet',
+        value: { publicKey: signer, signature: Buffer.alloc(0) },
       })
   );
 
-  constructor(private readonly _walletStore: WalletStore) {
+  constructor() {
     super(initialState);
 
     this.start(
       this.transaction$.pipe(
         isNotNull,
         map((transaction) =>
-          signTransactionServiceFactory(
-            transaction,
-            (transaction) => {
-              const signTransaction$ =
-                this._walletStore.signTransaction(transaction);
-
-              if (signTransaction$ === undefined) {
-                throw new Error('Wallet cannot sign');
-              }
-
-              return lastValueFrom(signTransaction$);
-            },
-            {
-              eager: true,
-            }
-          )
+          signTransactionServiceFactory(transaction, {
+            eager: true,
+          })
         )
       )
     );
@@ -94,18 +80,35 @@ export class SignTransactionButtonStore extends ComponentStore<ViewModel> {
     })
   );
 
-  readonly signTransaction = this.effect<{
+  readonly signTransactionWithWallet = this.effect<{
     service: Option<ServiceType>;
-    signer: Option<PublicKey>;
+    publicKey: Option<PublicKey>;
+    signature: Option<Buffer>;
   }>(
-    tap(({ service, signer }) => {
-      if (service === null || signer === null) {
+    tap(({ service, publicKey, signature }) => {
+      if (service === null || publicKey === null || signature === null) {
         return;
       }
 
       service.send({
-        type: 'signTransaction',
-        value: signer,
+        type: 'signTransactionWithWallet',
+        value: { publicKey, signature },
+      });
+    })
+  );
+
+  readonly signTransactionWithKeypair = this.effect<{
+    service: Option<ServiceType>;
+    keypair: Keypair;
+  }>(
+    tap(({ service, keypair }) => {
+      if (service === null) {
+        return;
+      }
+
+      service.send({
+        type: 'signTransactionWithKeypair',
+        value: keypair,
       });
     })
   );

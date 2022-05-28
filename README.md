@@ -61,6 +61,18 @@ The UI displays the number of required signatures and the public key of each sig
 
 NOTE: If the block height becomes invalid the signatures become invalid.
 
+There are two ways to sign a transaction:
+
+- Keypair: A Keypair consists of a public key and a private key. Using the private key, users can sign a transaction on behalf of the public key.
+- Wallet: Web-based applications can make use of the wallet-adapter library which provides compatibility with multiple wallet providers.
+
+Each method is handled in a different way at the Sign Transaction Machine, each has an action:
+
+- signWithKeypair: This action sends a keypair in the value, then the machine signs the transaction.
+- signWithWallet: This action triggers a transition to the Signing with Wallet state, on entry a service is invoked that calls the walletSignerFn and fires the returned Promise.
+
+Note: When instantiating the Sign Transaction machine a walletSignerFn is provided, the walletSignerFn receives a transaction and returns a Promise with the signed transaction.
+
 When the transaction is fully signed the Sending phase automatically starts.
 
 ## Send transaction

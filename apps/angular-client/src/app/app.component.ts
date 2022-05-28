@@ -19,17 +19,6 @@ import { BehaviorSubject } from 'rxjs';
         </xstate-create-transaction-section>
 
         <section>
-          <h2>Sign transaction</h2>
-
-          <xstate-sign-transaction-button
-            [transaction]="transaction$ | async"
-            [signer]="(authority$ | async) ?? null"
-            (transactionSigned)="onTransactionSigned($event)"
-          >
-          </xstate-sign-transaction-button>
-        </section>
-
-        <section>
           <h2>Send transaction</h2>
 
           <xstate-send-transaction-button
@@ -51,7 +40,12 @@ import { BehaviorSubject } from 'rxjs';
       </main>
 
       <aside class="w-80">
-        <xstate-keypairs-list></xstate-keypairs-list>
+        <xstate-sign-transaction-section
+          [transaction]="transaction$ | async"
+          [signer]="(authority$ | async) ?? null"
+          (transactionSigned)="onTransactionSignDone($event)"
+        >
+        </xstate-sign-transaction-section>
       </aside>
     </div>
   `,
@@ -78,11 +72,10 @@ export class AppComponent implements OnInit {
   }
 
   onTransactionCreated(transaction: Transaction) {
-    console.log('transaction created: ', transaction);
     this._transaction.next(transaction);
   }
 
-  onTransactionSigned(transaction: Transaction) {
+  onTransactionSignDone(transaction: Transaction) {
     this._transaction.next(transaction);
   }
 

@@ -8,10 +8,9 @@ import { FormlyMaterialModule } from '@ngx-formly/material';
 import { AppComponent } from './app.component';
 import { ConfirmTransactionButtonModule } from './confirm-transaction-button';
 import { CreateTransactionSectionModule } from './create-transaction-section/create-transaction-section.module';
-import { KeypairsSectionModule } from './keypairs-section/keypairs-section.module';
 import { PluginModule, SystemPlugin, TokenPlugin } from './plugins';
 import { SendTransactionButtonModule } from './send-transaction-button';
-import { SignTransactionButtonModule } from './sign-transaction-button';
+import { SignTransactionSectionModule } from './sign-transaction-section';
 
 @NgModule({
   declarations: [AppComponent],
@@ -19,10 +18,9 @@ import { SignTransactionButtonModule } from './sign-transaction-button';
     BrowserModule,
     BrowserAnimationsModule,
     CreateTransactionSectionModule,
-    SignTransactionButtonModule,
+    SignTransactionSectionModule,
     SendTransactionButtonModule,
     ConfirmTransactionButtonModule,
-    KeypairsSectionModule,
     HdWalletAdapterModule.forRoot({
       autoConnect: true,
     }),

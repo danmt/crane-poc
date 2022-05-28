@@ -1,16 +1,27 @@
-import { PublicKey, Transaction } from '@solana/web3.js';
+import {
+  Keypair,
+  PublicKey,
+  SignaturePubkeyPair,
+  Transaction,
+} from '@solana/web3.js';
+import { sign } from 'tweetnacl';
 import { assign, createMachine, interpret } from 'xstate';
 import { EventType, EventValue } from './types';
 
 export type StartSigningEvent = EventType<'startSigning'> &
   EventValue<Transaction>;
 
-export type SignTransactionEvent = EventType<'signTransaction'> &
-  EventValue<PublicKey>;
+export type SignTransactionWithWalletEvent =
+  EventType<'signTransactionWithWallet'> &
+    EventValue<{ publicKey: PublicKey; signature: Buffer }>;
+
+export type SignTransactionWithKeypairEvent =
+  EventType<'signTransactionWithKeypair'> & EventValue<Keypair>;
 
 export type SignTransactionMachineEvent =
   | StartSigningEvent
-  | SignTransactionEvent;
+  | SignTransactionWithWalletEvent
+  | SignTransactionWithKeypairEvent;
 
 export type SignTransactionMachineServices = {
   'Sign transaction': {
@@ -20,13 +31,12 @@ export type SignTransactionMachineServices = {
 
 export const signTransactionMachineFactory = (
   transaction: Transaction | undefined,
-  signTransaction: (transaction: Transaction) => Promise<Transaction>,
   config?: { eager: boolean }
 ) => {
-  /** @xstate-layout N4IgpgJg5mDOIC5QGUCWUB2ACALgJwEMNYCBjHVAe2wFsyALVDMAOgEkIAbMAYlhwJ4caTEyiJQAB0qxUFahJAAPRAFoALAHYAbCwCMATgDMABgMBWABxmATOoA0IAJ5rDBlgYOXtBmydNG6tqaNgC+oY4i2PhEJORUtAxMrBzcPIrSsvIYiioIqjZ6lixWetrmBmUmNpqa5uaOLvlGZSzW6uZaFr6WRpbhkejRhMRk2Vh0pIzMLFG4I3HZfEMAKgtjCRkycptIymqFukaa6paWejp1BqeNB7qapsaW5iFl5np6AyBzMaPx1BMkjMfut-hh0ntMjsFHs8hdNCx1F4jAZtGZzt4Ord8jZem1qicbNpAtZNNcviDYhsAZNpqwomJ5lSwTwINRWEwAG6UADW9KGTL+41pyVmQ0Zv0WCQQXMopAI2QA2iYALpbLK7UB5VQIwzqPQkow2czEozY1R6cyIyzdELaY0mdRGIzaCkCyXUxJTUUMjBQQVS6g8MB4PCUPAsSScBUAM3DNDFmADnsB3uB4r9ybBMow3PlStV6uhOVhaiCVsqJnMgXqNjr6gczkQ6hYJj0-htBpMljrBs04QiIAwlAgcEUlKFCVTdPYXDAReyuTLphYmg+liR2m0vQbjaaqiNRhYpg6DfMbZNOnMbqTHrB09Fa2Z41kmEgC81+wQRRsx98BpdbdrjXTRzQ+BFjg3cp-DsapXUHCdAy9GdEM9D8YS1VwDARGxrg+I1ameNswO8DwvE0Nt2z0II7DCBD3VBYUgX5URMzvRdIW2DjMPyQw9DI-UrjqLQ21AptvxOVtz1RXCrxrOjBlvRipxFZh0JLHjVHPEx9GMMwrFsPc1BRI5HXqajAjsToB1CIA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QGUCWUB2ACALgJwEMNYCBjHVAe2wFsyALVDMAOgEkIAbMAYlhwJ4caTEyiJQAB0qxUFahJAAPRAFoALACYAHC23qAzAHZ16gIwBOIwYCsmiwBoQATzVmjANhY2rH7f5sDD00zA00AX3CnEWx8IhJyKloGJlYObh5FaVl5DEUVBFV3MxZNMIMABiMbdW0DCwr1GydXQvsDFnUK21MjbU0bG31I6PRYwmIyXKw6UkZmFhjcCYTcvjGAFRWppIB1OXoAaTBnSQJUPCyZOST8xCHOqoa-EOr1C2aXNSaWdz9zeraDwWWxmEYgJZxSaJagzFILSHbGEYdaYLbxHbUfY4ei7Aicbg4K45W5IZRqerqFgfWraCpmMz6AzqDwtb42X6efShCxAkE2MFRCFjZYY5FwuapRYiqGrJKZMnZG4KMkFSwcmz0yz1MoC3maNmFRkczT0qxGbpVd6hSJCjCUCBwRSIsXTWbzNJcMDE5V5VUUuosIKad50mweJrWT6tVT2CzU7o1UIh-SaAbgl3Qt3w1jorNJLCyTCQH25O4IU0VIMWd5DSzPHSG2MWeMNHp2PzGAZGDMypHZyUIvuu0lSa5l-1G97U3oeMweDw+DyVAxN+cdHyeKwWEPWC0RIWZuWw92pUuj8mFJqaPSGEzmKy2exNrsJ2ygnymne28JAA */
   return createMachine(
     {
-      context: { transaction },
+      context: { transaction, signatures: [] as SignaturePubkeyPair[] },
       tsTypes: {} as import('./sign-transaction.machine.typegen').Typegen0,
       schema: {
         events: {} as SignTransactionMachineEvent,
@@ -55,26 +65,14 @@ export const signTransactionMachineFactory = (
             target: 'Transaction signed',
           },
           on: {
-            signTransaction: {
+            signTransactionWithKeypair: {
+              actions: 'Sign using keypair',
               cond: 'valid signer',
-              target: 'Signing transaction',
             },
-          },
-        },
-        'Signing transaction': {
-          invoke: {
-            src: 'Sign transaction',
-            onDone: [
-              {
-                target: 'Sign transaction',
-              },
-            ],
-            onError: [
-              {
-                actions: 'Notify sign transaction error',
-                target: 'Sign transaction',
-              },
-            ],
+            signTransactionWithWallet: {
+              actions: 'Save signature in context',
+              cond: 'valid signer',
+            },
           },
         },
       },
@@ -85,21 +83,47 @@ export const signTransactionMachineFactory = (
         'Save transaction in context': assign({
           transaction: (_, event) => event.value,
         }),
-        'Notify sign transaction error': (_, event) =>
-          console.error(event.data),
-      },
-      services: {
-        'Sign transaction': ({ transaction }) => {
-          if (transaction === undefined) {
-            throw new Error('Transaction is missing');
-          }
+        // Is it easy to get the signature only using wallet adapter?
+        'Save signature in context': assign({
+          signatures: (context, event) => [
+            ...context.signatures,
+            {
+              publicKey: event.value.publicKey,
+              signature: event.value.signature,
+            },
+          ],
+        }),
+        'Sign using keypair': assign({
+          signatures: ({ transaction, signatures }, event) => {
+            if (transaction === undefined) {
+              return signatures;
+            }
 
-          return signTransaction(transaction);
-        },
+            return [
+              ...signatures,
+              {
+                publicKey: event.value.publicKey,
+                signature: Buffer.from(
+                  sign.detached(
+                    transaction.compileMessage().serialize(),
+                    event.value.secretKey
+                  )
+                ),
+              },
+            ];
+          },
+        }),
       },
       guards: {
-        'signatures done': ({ transaction }) => {
-          console.log(transaction, transaction?.verifySignatures());
+        'signatures done': (context) => {
+          const transaction = new Transaction(context.transaction);
+
+          context.signatures.forEach(({ publicKey, signature }) => {
+            if (signature !== null) {
+              transaction.addSignature(publicKey, signature);
+            }
+          });
+
           return transaction?.verifySignatures() ?? false;
         },
         'valid signer': ({ transaction }, event) => {
@@ -109,10 +133,8 @@ export const signTransactionMachineFactory = (
 
           const message = transaction.compileMessage();
           const accountIndex = message.accountKeys.findIndex((accountKey) =>
-            accountKey.equals(event.value)
+            accountKey.equals(event.value.publicKey)
           );
-
-          console.log({ message });
 
           return message.isAccountSigner(accountIndex);
         },
@@ -124,10 +146,7 @@ export const signTransactionMachineFactory = (
 
 export const signTransactionServiceFactory = (
   transaction: Transaction | undefined,
-  signTransaction: (transaction: Transaction) => Promise<Transaction>,
   config?: { eager: boolean }
 ) => {
-  return interpret(
-    signTransactionMachineFactory(transaction, signTransaction, config)
-  );
+  return interpret(signTransactionMachineFactory(transaction, config));
 };

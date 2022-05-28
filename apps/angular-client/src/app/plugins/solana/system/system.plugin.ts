@@ -1,5 +1,6 @@
 import { AnchorProvider, Native } from '@heavy-duty/anchor';
 import { PublicKey, TransactionInstruction } from '@solana/web3.js';
+import { toInstructionArguments } from '../../../utils';
 import { IdlInstruction, PluginInterface } from '../../types';
 
 export class SystemPlugin implements PluginInterface {
@@ -36,7 +37,10 @@ export class SystemPlugin implements PluginInterface {
         isSigner: account.isSigner,
         isWritable: account.isMut,
       })),
-      data: this.program.coder.instruction.encode(instructionName, model.args),
+      data: this.program.coder.instruction.encode(
+        instructionName,
+        toInstructionArguments(instruction, model.args)
+      ),
     });
   }
 }

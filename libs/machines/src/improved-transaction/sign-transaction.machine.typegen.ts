@@ -4,38 +4,27 @@ export interface Typegen0 {
   '@@xstate/typegen': true;
   eventsCausingActions: {
     'Save transaction in context': 'startSigning';
-    'Notify sign transaction error': 'error.platform.Sign transaction machine.Signing transaction:invocation[0]';
+    'Sign using keypair': 'signTransactionWithKeypair';
+    'Save signature in context': 'signTransactionWithWallet';
   };
   internalEvents: {
-    'error.platform.Sign transaction machine.Signing transaction:invocation[0]': {
-      type: 'error.platform.Sign transaction machine.Signing transaction:invocation[0]';
-      data: unknown;
-    };
     '': { type: '' };
     'xstate.init': { type: 'xstate.init' };
   };
-  invokeSrcNameMap: {
-    'Sign transaction': 'done.invoke.Sign transaction machine.Signing transaction:invocation[0]';
-  };
+  invokeSrcNameMap: {};
   missingImplementations: {
     actions: never;
     services: never;
     guards: never;
     delays: never;
   };
-  eventsCausingServices: {
-    'Sign transaction': 'signTransaction';
-  };
+  eventsCausingServices: {};
   eventsCausingGuards: {
     'auto start enabled': '';
-    'valid signer': 'signTransaction';
+    'valid signer': 'signTransactionWithKeypair' | 'signTransactionWithWallet';
     'signatures done': '';
   };
   eventsCausingDelays: {};
-  matchesStates:
-    | 'Idle'
-    | 'Transaction signed'
-    | 'Sign transaction'
-    | 'Signing transaction';
+  matchesStates: 'Idle' | 'Transaction signed' | 'Sign transaction';
   tags: never;
 }
