@@ -5,7 +5,7 @@ import { IdlInstruction, PluginInterface } from '../../types';
 
 export class SystemPlugin implements PluginInterface {
   private readonly program = Native.system({} as AnchorProvider);
-  readonly namespace = 'native';
+  readonly namespace = 'solana';
   readonly name = this.program.idl.name;
   readonly instructions = this.program.idl.instructions;
 

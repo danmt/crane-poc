@@ -2,14 +2,7 @@ import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { WalletStore } from '@heavy-duty/wallet-adapter';
 import { Transaction } from '@solana/web3.js';
-import {
-  BehaviorSubject,
-  combineLatest,
-  filter,
-  of,
-  take,
-  takeUntil,
-} from 'rxjs';
+import { combineLatest, filter, of, take, takeUntil } from 'rxjs';
 import { PluginsService } from '../plugins';
 import { isNotNull } from '../utils';
 import { CreateTransactionSectionStore } from './create-transaction-section.store';
@@ -21,7 +14,7 @@ import { TransactionForm } from './transaction-form';
   template: `
     <section class="p-4">
       <header class="flex justify-between mb-4">
-        <h1 class="text-3xl">Playground</h1>
+        <h1 class="text-3xl">Crane Playground</h1>
 
         <button (click)="onRestartTransactionForm()" class="underline">
           Restart form
@@ -50,10 +43,7 @@ import { TransactionForm } from './transaction-form';
   providers: [CreateTransactionSectionStore],
 })
 export class CreateTransactionSectionComponent implements OnInit {
-  _transactionForm = new TransactionForm();
-  private readonly _selectedInstruction =
-    new BehaviorSubject<InstructionOption | null>(null);
-  readonly selectedInstruction$ = this._selectedInstruction.asObservable();
+  private readonly _transactionForm = new TransactionForm();
   form = new FormGroup({});
   model = {};
   instructions: InstructionOption[] = [];
@@ -79,12 +69,6 @@ export class CreateTransactionSectionComponent implements OnInit {
       .subscribe(({ context }) =>
         this.transactionCreated.emit(context.transaction)
       );
-    this._createTransactionSectionStore.setFeePayer(
-      combineLatest({
-        service: this._createTransactionSectionStore.service$,
-        feePayer: this._walletStore.publicKey$,
-      })
-    );
   }
 
   onBuildTransaction(

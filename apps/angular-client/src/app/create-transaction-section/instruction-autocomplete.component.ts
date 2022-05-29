@@ -33,7 +33,16 @@ export interface InstructionOption {
             *ngFor="let option of filteredOptions | async"
             [value]="option"
           >
-            {{ option.name }} {{ option.instruction.name }}
+            <div class="flex justify-start gap-2 items-center">
+              <img
+                class="h-5 inline-block"
+                [src]="'assets/images/' + option.namespace + '.png'"
+              />
+
+              <span class="uppercase text-xs">{{ option.name }}</span> |
+
+              <span>{{ option.instruction.name }}</span>
+            </div>
           </mat-option>
         </mat-autocomplete>
       </mat-form-field>
