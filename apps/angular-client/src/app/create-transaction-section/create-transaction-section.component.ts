@@ -1,82 +1,57 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-import { ConnectionStore, WalletStore } from '@heavy-duty/wallet-adapter';
-import { FormlyFieldConfig } from '@ngx-formly/core';
+import { WalletStore } from '@heavy-duty/wallet-adapter';
 import { Transaction } from '@solana/web3.js';
 import {
   BehaviorSubject,
   combineLatest,
   filter,
-  map,
-  Observable,
   of,
   take,
   takeUntil,
 } from 'rxjs';
 import { PluginsService } from '../plugins';
-import { isNotNull, toFormlyFields } from '../utils';
+import { isNotNull } from '../utils';
 import { CreateTransactionSectionStore } from './create-transaction-section.store';
 import { InstructionOption } from './instruction-autocomplete.component';
+import { TransactionForm } from './transaction-form';
 
 @Component({
-  selector: 'xstate-create-transaction-section',
+  selector: 'crane-create-transaction-section',
   template: `
     <section class="p-4">
       <h2>Create transaction</h2>
 
-      <xstate-instruction-autocomplete
+      <crane-instruction-autocomplete
         (instructionSelected)="onInstructionSelected($event)"
-      ></xstate-instruction-autocomplete>
+      ></crane-instruction-autocomplete>
 
-      <ng-container *ngIf="selectedInstruction$ | async as selectedInstruction">
-        <ng-container *ngIf="fields$ | async as fields">
-          <form
-            *ngIf="fields.length > 0 && selectedInstruction !== null"
-            [formGroup]="form"
-            (ngSubmit)="onAddInstruction(model, selectedInstruction)"
-          >
-            <formly-form
-              [form]="form"
-              [fields]="fields"
-              [model]="model"
-            ></formly-form>
-            <button type="submit" mat-raised-button color="primary">
-              Submit
-            </button>
-          </form>
-        </ng-container>
+      <ng-container *ngIf="fields$ | async as fields">
+        <form
+          *ngIf="fields"
+          [formGroup]="form"
+          (ngSubmit)="onBuildTransaction(model, instructions)"
+        >
+          <formly-form
+            [form]="form"
+            [fields]="[fields]"
+            [model]="model"
+          ></formly-form>
+        </form>
       </ng-container>
-
-      <button
-        (click)="onBuildTransaction()"
-        [disabled]="disabled$ | async"
-        class="px-4 py-2 border-2 border-blue-300 bg-blue-200 disabled:bg-gray-200 disabled:border-gray-300"
-      >
-        Create transaction
-      </button>
     </section>
   `,
   providers: [CreateTransactionSectionStore],
 })
 export class CreateTransactionSectionComponent implements OnInit {
+  _transactionForm = new TransactionForm();
   private readonly _selectedInstruction =
     new BehaviorSubject<InstructionOption | null>(null);
   readonly selectedInstruction$ = this._selectedInstruction.asObservable();
   form = new FormGroup({});
-  model = {
-    accounts: {},
-    args: {},
-  };
-  readonly fields$: Observable<FormlyFieldConfig[]> =
-    this.selectedInstruction$.pipe(
-      map((selectedInstruction) =>
-        selectedInstruction === null
-          ? []
-          : toFormlyFields(selectedInstruction.instruction)
-      )
-    );
-
-  readonly connection$ = this._createTransactionSectionStore.connection$;
+  model = {};
+  instructions: InstructionOption[] = [];
+  readonly fields$ = this._transactionForm.fields$;
   readonly disabled$ = this._createTransactionSectionStore.disabled$;
   readonly authority$ = this._walletStore.publicKey$;
 
@@ -84,7 +59,6 @@ export class CreateTransactionSectionComponent implements OnInit {
 
   constructor(
     private readonly _walletStore: WalletStore,
-    private readonly _connectionStore: ConnectionStore,
     private readonly _pluginsService: PluginsService,
     private readonly _createTransactionSectionStore: CreateTransactionSectionStore
   ) {}
@@ -105,42 +79,44 @@ export class CreateTransactionSectionComponent implements OnInit {
         feePayer: this._walletStore.publicKey$,
       })
     );
-    this._createTransactionSectionStore.setConnection(
-      this._connectionStore.connection$
-    );
   }
 
-  onBuildTransaction() {
-    this._createTransactionSectionStore.buildTransaction(
-      this._createTransactionSectionStore.service$.pipe(take(1))
-    );
-  }
-
-  onInstructionSelected(instruction: InstructionOption) {
-    this._selectedInstruction.next(instruction);
-  }
-
-  onAddInstruction(
+  onBuildTransaction(
     model: {
-      accounts: { [accountName: string]: string };
-      args: { [argName: string]: string };
+      [key: string]: {
+        accounts: { [accountName: string]: string };
+        args: { [argName: string]: string };
+      };
     },
-    { namespace, name, instruction }: InstructionOption
+    instructionOptions: InstructionOption[]
   ) {
-    const transactionInstruction =
-      this._pluginsService
-        .getPlugin(namespace, name)
-        ?.getTransactionInstruction(instruction.name, model) ?? null;
+    const instructions = instructionOptions.map(
+      ({ namespace, name, instruction }, index) => {
+        const transactionInstruction =
+          this._pluginsService
+            .getPlugin(namespace, name)
+            ?.getTransactionInstruction(instruction.name, model[index + 1]) ??
+          null;
 
-    if (transactionInstruction === null) {
-      throw new Error('Invalid instruction.');
-    }
+        if (transactionInstruction === null) {
+          throw new Error('Invalid instruction.');
+        }
 
-    this._createTransactionSectionStore.addInstruction(
-      combineLatest({
-        service: this._createTransactionSectionStore.service$,
-        instruction: of(transactionInstruction),
-      }).pipe(take(1))
+        return transactionInstruction;
+      }
     );
+
+    this._createTransactionSectionStore.createTransaction(
+      combineLatest({
+        service: this._createTransactionSectionStore.service$.pipe(take(1)),
+        feePayer: this._walletStore.publicKey$,
+        instructions: of(instructions),
+      })
+    );
+  }
+
+  onInstructionSelected(instructionOption: InstructionOption) {
+    this.instructions.push(instructionOption);
+    this._transactionForm.addInstruction(instructionOption);
   }
 }

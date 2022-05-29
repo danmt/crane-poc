@@ -1,15 +1,14 @@
 import { Injectable } from '@angular/core';
+import { confirmTransactionServiceFactory } from '@crane/machines';
 import { ConnectionStore } from '@heavy-duty/wallet-adapter';
 import { ComponentStore } from '@ngrx/component-store';
 import { TransactionSignature } from '@solana/web3.js';
-import { confirmTransactionServiceFactory } from '@xstate/machines';
 import { tap } from 'rxjs';
 import { StateFrom } from 'xstate';
-import { isNotNull, tapEffect } from '../utils';
+import { isNotNull, Option, tapEffect } from '../utils';
 
 type ServiceType = ReturnType<typeof confirmTransactionServiceFactory>;
 type StateType = StateFrom<ServiceType['machine']>;
-type Option<T> = T | null;
 
 interface ViewModel {
   service: Option<ServiceType>;

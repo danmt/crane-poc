@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
+import { signTransactionServiceFactory } from '@crane/machines';
 import { ComponentStore } from '@ngrx/component-store';
 import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
-import { signTransactionServiceFactory } from '@xstate/machines';
 import { map, tap } from 'rxjs';
 import { StateFrom } from 'xstate';
 import { isNotNull, Option, tapEffect } from '../utils';

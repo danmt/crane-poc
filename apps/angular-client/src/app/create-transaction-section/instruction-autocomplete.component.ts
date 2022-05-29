@@ -10,7 +10,7 @@ export interface InstructionOption {
 }
 
 @Component({
-  selector: 'xstate-instruction-autocomplete',
+  selector: 'crane-instruction-autocomplete',
   template: `
     <form class="example-form">
       <mat-form-field class="w-full" appearance="fill">

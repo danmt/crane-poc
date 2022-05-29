@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
+import { createTransactionServiceFactory } from '@crane/machines';
+import { ConnectionStore } from '@heavy-duty/wallet-adapter';
 import { ComponentStore } from '@ngrx/component-store';
-import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js';
-import { createTransactionServiceFactory } from '@xstate/machines';
+import { PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { combineLatest, filter, map, tap } from 'rxjs';
 import { StateFrom } from 'xstate';
 import { isNotNull, Option, tapEffect } from '../utils';
@@ -12,20 +13,17 @@ type StateType = StateFrom<ServiceType['machine']>;
 interface ViewModel {
   service: Option<ServiceType>;
   serviceState: Option<StateType>;
-  connection: Option<Connection>;
 }
 
 const initialState: ViewModel = {
   service: null,
   serviceState: null,
-  connection: null,
 };
 
 @Injectable()
 export class CreateTransactionSectionStore extends ComponentStore<ViewModel> {
   readonly service$ = this.select(({ service }) => service);
   readonly serviceState$ = this.select(({ serviceState }) => serviceState);
-  readonly connection$ = this.select(({ connection }) => connection);
   readonly feePayer$ = this.select(
     this.serviceState$,
     (serviceState) => serviceState?.context.feePayer ?? null
@@ -42,19 +40,25 @@ export class CreateTransactionSectionStore extends ComponentStore<ViewModel> {
       serviceState === null ||
       feePayer === null ||
       instructions === null ||
-      !serviceState.can('buildTransaction')
+      !serviceState.can({
+        type: 'createTransaction',
+        value: {
+          feePayer,
+          instructions,
+        },
+      })
   );
 
-  constructor() {
+  constructor(private readonly _connectionStore: ConnectionStore) {
     super(initialState);
 
     this.start(
-      this.connection$.pipe(
+      this._connectionStore.connection$.pipe(
         isNotNull,
         map((connection) =>
           createTransactionServiceFactory(connection, {
-            eager: true,
-            autoBuild: false,
+            eager: false,
+            autoBuild: true,
             fireAndForget: false,
           })
         )
@@ -71,13 +75,6 @@ export class CreateTransactionSectionStore extends ComponentStore<ViewModel> {
     );
   }
 
-  readonly setConnection = this.updater<Option<Connection>>(
-    (state, connection) => ({
-      ...state,
-      connection,
-    })
-  );
-
   readonly start = this.effect<ServiceType>(
     tapEffect((service) => {
       service.start();
@@ -93,6 +90,26 @@ export class CreateTransactionSectionStore extends ComponentStore<ViewModel> {
 
   readonly restartMachine = this.effect<ServiceType>(
     tap((service) => service.send('restartMachine'))
+  );
+
+  readonly createTransaction = this.effect<{
+    service: Option<ServiceType>;
+    feePayer: Option<PublicKey>;
+    instructions: TransactionInstruction[];
+  }>(
+    tap(({ service, feePayer, instructions }) => {
+      if (service === null || feePayer === null) {
+        return;
+      }
+
+      service.send({
+        type: 'createTransaction',
+        value: {
+          feePayer,
+          instructions,
+        },
+      });
+    })
   );
 
   readonly buildTransaction = this.effect<Option<ServiceType>>(

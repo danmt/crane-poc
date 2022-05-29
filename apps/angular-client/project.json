@@ -2,7 +2,7 @@
   "projectType": "application",
   "root": "apps/angular-client",
   "sourceRoot": "apps/angular-client/src",
-  "prefix": "xstate",
+  "prefix": "crane",
   "targets": {
     "build": {
       "executor": "@nrwl/angular:webpack-browser",
@@ -18,7 +18,7 @@
           "apps/angular-client/src/assets"
         ],
         "styles": [
-          "apps/angular-client/src/styles.css",
+          "apps/angular-client/src/styles.scss",
           "./node_modules/@angular/material/prebuilt-themes/purple-green.css"
         ],
         "scripts": [],

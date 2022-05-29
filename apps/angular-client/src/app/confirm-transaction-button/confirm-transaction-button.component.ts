@@ -5,7 +5,7 @@ import { isNotNull } from '../utils';
 import { ConfirmTransactionButtonStore } from './confirm-transaction-button.store';
 
 @Component({
-  selector: 'xstate-confirm-transaction-button',
+  selector: 'crane-confirm-transaction-button',
   template: `
     <button
       (click)="onConfirmTransaction()"

@@ -12,7 +12,7 @@ import { isNotNull } from '../utils';
 import { SendTransactionButtonStore } from './send-transaction-button.store';
 
 @Component({
-  selector: 'xstate-send-transaction-button',
+  selector: 'crane-send-transaction-button',
   template: `
     <button
       (click)="onSendTransaction()"

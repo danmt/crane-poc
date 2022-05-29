@@ -3,7 +3,7 @@ import { Keypair } from '@solana/web3.js';
 import { KeypairsService } from './keypairs.service';
 
 @Component({
-  selector: 'xstate-keypairs-list',
+  selector: 'crane-keypairs-list',
   template: `
     <section>
       <h3>Keypairs</h3>

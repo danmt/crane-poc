@@ -6,7 +6,7 @@ import { isNotNull } from '../utils';
 import { SignTransactionSectionStore } from './sign-transaction-section.store';
 
 @Component({
-  selector: 'xstate-sign-transaction-section',
+  selector: 'crane-sign-transaction-section',
   template: `
     <section class="p-4">
       <h2>Sign transaction</h2>
@@ -40,17 +40,17 @@ import { SignTransactionSectionStore } from './sign-transaction-section.store';
         </div>
       </div>
 
-      <xstate-keypairs-list
+      <crane-keypairs-list
         (signTransaction)="onSignTransactionWithKeypair($event)"
         [disabled]="(disabled$ | async) ?? false"
-      ></xstate-keypairs-list>
+      ></crane-keypairs-list>
 
       <ng-container *ngIf="transaction$ | async as transaction">
-        <xstate-signatures-progress
+        <crane-signatures-progress
           *ngIf="signatures$ | async as signatures"
           [signaturesDone]="signatures.length"
           [signaturesRequired]="transaction.signatures.length"
-        ></xstate-signatures-progress>
+        ></crane-signatures-progress>
       </ng-container>
     </section>
   `,

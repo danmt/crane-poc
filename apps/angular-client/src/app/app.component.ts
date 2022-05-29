@@ -5,7 +5,7 @@ import { Transaction, TransactionSignature } from '@solana/web3.js';
 import { BehaviorSubject } from 'rxjs';
 
 @Component({
-  selector: 'xstate-root',
+  selector: 'crane-root',
   template: `
     <header>
       <h1>XState Solana Playground</h1>
@@ -13,39 +13,39 @@ import { BehaviorSubject } from 'rxjs';
 
     <div class="flex justify-between">
       <main class="flex-1">
-        <xstate-create-transaction-section
+        <crane-create-transaction-section
           (transactionCreated)="onTransactionCreated($event)"
         >
-        </xstate-create-transaction-section>
+        </crane-create-transaction-section>
 
         <section>
           <h2>Send transaction</h2>
 
-          <xstate-send-transaction-button
+          <crane-send-transaction-button
             [transaction]="transaction$ | async"
             (transactionSent)="onTransactionSent($event)"
           >
-          </xstate-send-transaction-button>
+          </crane-send-transaction-button>
         </section>
 
         <section>
           <h2>Confirm transaction</h2>
 
-          <xstate-confirm-transaction-button
+          <crane-confirm-transaction-button
             [signature]="signature$ | async"
             (transactionConfirmed)="onTransactionConfirmed()"
           >
-          </xstate-confirm-transaction-button>
+          </crane-confirm-transaction-button>
         </section>
       </main>
 
       <aside class="w-80">
-        <xstate-sign-transaction-section
+        <crane-sign-transaction-section
           [transaction]="transaction$ | async"
           [signer]="(authority$ | async) ?? null"
           (transactionSigned)="onTransactionSignDone($event)"
         >
-        </xstate-sign-transaction-section>
+        </crane-sign-transaction-section>
       </aside>
     </div>
   `,

@@ -15,7 +15,7 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@xstate/machines": ["libs/machines/src/index.ts"]
+      "@crane/machines": ["libs/machines/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

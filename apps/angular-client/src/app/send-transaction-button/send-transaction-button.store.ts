@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
+import { sendTransactionServiceFactory } from '@crane/machines';
 import { ConnectionStore } from '@heavy-duty/wallet-adapter';
 import { ComponentStore } from '@ngrx/component-store';
 import { Transaction } from '@solana/web3.js';
-import { sendTransactionServiceFactory } from '@xstate/machines';
 import { tap } from 'rxjs';
 import { StateFrom } from 'xstate';
 import { isNotNull, tapEffect } from '../utils';

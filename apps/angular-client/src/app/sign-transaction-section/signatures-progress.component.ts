@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core';
 import { Option } from '../utils';
 
 @Component({
-  selector: 'xstate-signatures-progress',
+  selector: 'crane-signatures-progress',
   template: `
     <div *ngIf="signaturesDone !== null && signaturesRequired !== null">
       <p>Signatures required:</p>
