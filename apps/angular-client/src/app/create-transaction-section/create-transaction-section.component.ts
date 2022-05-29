@@ -20,7 +20,13 @@ import { TransactionForm } from './transaction-form';
   selector: 'crane-create-transaction-section',
   template: `
     <section class="p-4">
-      <h2>Create transaction</h2>
+      <header class="flex justify-between mb-4">
+        <h1 class="text-3xl">Playground</h1>
+
+        <button (click)="onRestartTransactionForm()" class="underline">
+          Restart form
+        </button>
+      </header>
 
       <crane-instruction-autocomplete
         (instructionSelected)="onInstructionSelected($event)"
@@ -118,5 +124,9 @@ export class CreateTransactionSectionComponent implements OnInit {
   onInstructionSelected(instructionOption: InstructionOption) {
     this.instructions.push(instructionOption);
     this._transactionForm.addInstruction(instructionOption);
+  }
+
+  onRestartTransactionForm() {
+    this._transactionForm.restart();
   }
 }

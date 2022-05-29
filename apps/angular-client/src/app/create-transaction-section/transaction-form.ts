@@ -25,4 +25,11 @@ export class TransactionForm {
       ],
     });
   }
+
+  restart() {
+    this._fields.next({
+      type: 'stepper',
+      fieldGroup: [],
+    });
+  }
 }

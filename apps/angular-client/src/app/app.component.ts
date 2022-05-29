@@ -7,36 +7,12 @@ import { BehaviorSubject } from 'rxjs';
 @Component({
   selector: 'crane-root',
   template: `
-    <header>
-      <h1>XState Solana Playground</h1>
-    </header>
-
     <div class="flex justify-between">
       <main class="flex-1">
         <crane-create-transaction-section
           (transactionCreated)="onTransactionCreated($event)"
         >
         </crane-create-transaction-section>
-
-        <section>
-          <h2>Send transaction</h2>
-
-          <crane-send-transaction-button
-            [transaction]="transaction$ | async"
-            (transactionSent)="onTransactionSent($event)"
-          >
-          </crane-send-transaction-button>
-        </section>
-
-        <section>
-          <h2>Confirm transaction</h2>
-
-          <crane-confirm-transaction-button
-            [signature]="signature$ | async"
-            (transactionConfirmed)="onTransactionConfirmed()"
-          >
-          </crane-confirm-transaction-button>
-        </section>
       </main>
 
       <aside class="w-80">
@@ -46,6 +22,18 @@ import { BehaviorSubject } from 'rxjs';
           (transactionSigned)="onTransactionSignDone($event)"
         >
         </crane-sign-transaction-section>
+
+        <crane-send-transaction-button
+          [transaction]="transaction$ | async"
+          (transactionSent)="onTransactionSent($event)"
+        >
+        </crane-send-transaction-button>
+
+        <crane-confirm-transaction-button
+          [signature]="signature$ | async"
+          (transactionConfirmed)="onTransactionConfirmed()"
+        >
+        </crane-confirm-transaction-button>
       </aside>
     </div>
   `,

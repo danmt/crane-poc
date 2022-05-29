@@ -14,11 +14,11 @@ export interface InstructionOption {
   template: `
     <form class="example-form">
       <mat-form-field class="w-full" appearance="fill">
-        <mat-label>Instruction</mat-label>
+        <mat-label>Choose an instruction</mat-label>
         <input
           type="text"
           placeholder="Pick one"
-          aria-label="Instruction"
+          aria-label="Choose an instruction"
           matInput
           [formControl]="searchControl"
           [matAutocomplete]="auto"
