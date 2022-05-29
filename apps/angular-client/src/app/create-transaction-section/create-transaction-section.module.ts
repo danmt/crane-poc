@@ -4,7 +4,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { FormlyModule } from '@ngx-formly/core';
 import { CreateTransactionSectionComponent } from './create-transaction-section.component';
-import { InstructionAutocompleteModule } from './instruction-autocomplete';
+import { InstructionAutocompleteModule } from './instruction-autocomplete.module';
 
 @NgModule({
   imports: [

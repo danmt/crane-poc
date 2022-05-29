@@ -16,7 +16,7 @@ import {
 import { PluginsService } from '../plugins';
 import { isNotNull, toFormlyFields } from '../utils';
 import { CreateTransactionSectionStore } from './create-transaction-section.store';
-import { InstructionOption } from './instruction-autocomplete/instruction-autocomplete.component';
+import { InstructionOption } from './instruction-autocomplete.component';
 
 @Component({
   selector: 'xstate-create-transaction-section',

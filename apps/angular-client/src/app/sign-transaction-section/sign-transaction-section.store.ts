@@ -4,11 +4,10 @@ import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
 import { signTransactionServiceFactory } from '@xstate/machines';
 import { map, tap } from 'rxjs';
 import { StateFrom } from 'xstate';
-import { isNotNull, tapEffect } from '../utils';
+import { isNotNull, Option, tapEffect } from '../utils';
 
 type ServiceType = ReturnType<typeof signTransactionServiceFactory>;
 type StateType = StateFrom<ServiceType['machine']>;
-type Option<T> = T | null;
 
 interface ViewModel {
   service: Option<ServiceType>;

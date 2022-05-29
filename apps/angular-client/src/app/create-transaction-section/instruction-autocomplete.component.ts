@@ -1,7 +1,7 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { map, Observable, startWith } from 'rxjs';
-import { IdlInstruction, PluginsService } from '../../plugins';
+import { IdlInstruction, PluginsService } from '../plugins';
 
 export interface InstructionOption {
   namespace: string;
