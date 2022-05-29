@@ -42,7 +42,16 @@ import { SignTransactionSectionStore } from './sign-transaction-section.store';
 
       <xstate-keypairs-list
         (signTransaction)="onSignTransactionWithKeypair($event)"
+        [disabled]="(disabled$ | async) ?? false"
       ></xstate-keypairs-list>
+
+      <ng-container *ngIf="transaction$ | async as transaction">
+        <xstate-signatures-progress
+          *ngIf="signatures$ | async as signatures"
+          [signaturesDone]="signatures.length"
+          [signaturesRequired]="transaction.signatures.length"
+        ></xstate-signatures-progress>
+      </ng-container>
     </section>
   `,
   providers: [SignTransactionSectionStore],
@@ -51,6 +60,7 @@ export class SignTransactionSectionComponent implements OnInit {
   readonly publicKey$ = this._walletStore.publicKey$;
   readonly transaction$ = this._signTransactionSectionStore.transaction$;
   readonly disabled$ = this._signTransactionSectionStore.disabled$;
+  readonly signatures$ = this._signTransactionSectionStore.signatures$;
 
   @Input() set signer(value: PublicKey | null) {
     if (value !== null) {

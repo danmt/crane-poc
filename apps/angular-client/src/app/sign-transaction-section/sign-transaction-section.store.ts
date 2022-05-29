@@ -29,6 +29,10 @@ export class SignTransactionSectionStore extends ComponentStore<ViewModel> {
   readonly service$ = this.select(({ service }) => service);
   readonly serviceState$ = this.select(({ serviceState }) => serviceState);
   readonly transaction$ = this.select(({ transaction }) => transaction);
+  readonly signatures$ = this.select(
+    this.serviceState$,
+    (serviceState) => serviceState?.context.signatures ?? []
+  );
   readonly signer$ = this.select(({ signer }) => signer);
   readonly disabled$ = this.select(
     this.serviceState$,

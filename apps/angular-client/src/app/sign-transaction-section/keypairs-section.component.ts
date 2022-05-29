@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Keypair } from '@solana/web3.js';
 import { KeypairsService } from './keypairs.service';
 
@@ -33,6 +33,7 @@ import { KeypairsService } from './keypairs.service';
             <button
               mat-raised-button
               color="accent"
+              [disabled]="disabled"
               (click)="onSignTransaction(i)"
             >
               Sign
@@ -48,6 +49,7 @@ import { KeypairsService } from './keypairs.service';
   `,
 })
 export class KeypairsSectionComponent {
+  @Input() disabled = false;
   @Output() signTransaction = new EventEmitter<Keypair>();
 
   readonly keypairs$ = this._keypairsService.keypairs$;
