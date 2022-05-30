@@ -1,13 +1,13 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { WalletStore } from '@heavy-duty/wallet-adapter';
-import { Transaction } from '@solana/web3.js';
+import { Transaction, TransactionInstruction } from '@solana/web3.js';
 import { combineLatest, filter, of, take, takeUntil } from 'rxjs';
 import { PluginsService } from '../plugins';
 import { isNotNull } from '../utils';
 import { CreateTransactionSectionStore } from './create-transaction-section.store';
 import { InstructionOption } from './instruction-autocomplete.component';
-import { TransactionForm } from './transaction-form';
+import { TransactionForm, TransactionFormModel } from './transaction-form';
 
 @Component({
   selector: 'crane-create-transaction-section',
@@ -29,7 +29,7 @@ import { TransactionForm } from './transaction-form';
         <form
           *ngIf="fields"
           [formGroup]="form"
-          (ngSubmit)="onBuildTransaction(model, instructions)"
+          (ngSubmit)="onBuildTransaction(model)"
         >
           <formly-form
             [form]="form"
@@ -45,8 +45,7 @@ import { TransactionForm } from './transaction-form';
 export class CreateTransactionSectionComponent implements OnInit {
   private readonly _transactionForm = new TransactionForm();
   form = new FormGroup({});
-  model = {};
-  instructions: InstructionOption[] = [];
+  model: TransactionFormModel = {};
   readonly fields$ = this._transactionForm.fields$;
   readonly disabled$ = this._createTransactionSectionStore.disabled$;
   readonly authority$ = this._walletStore.publicKey$;
@@ -71,29 +70,24 @@ export class CreateTransactionSectionComponent implements OnInit {
       );
   }
 
-  onBuildTransaction(
-    model: {
-      [key: string]: {
-        accounts: { [accountName: string]: string };
-        args: { [argName: string]: string };
-      };
-    },
-    instructionOptions: InstructionOption[]
-  ) {
-    const instructions = instructionOptions.map(
-      ({ namespace, name, instruction }, index) => {
+  onBuildTransaction(model: TransactionFormModel) {
+    const instructions = Object.values(model).reduce(
+      (
+        instructions: TransactionInstruction[],
+        { namespace, name, instruction, accounts, args }
+      ) => {
         const transactionInstruction =
           this._pluginsService
             .getPlugin(namespace, name)
-            ?.getTransactionInstruction(instruction.name, model[index + 1]) ??
-          null;
+            ?.getTransactionInstruction(instruction, args, accounts) ?? null;
 
         if (transactionInstruction === null) {
           throw new Error('Invalid instruction.');
         }
 
-        return transactionInstruction;
-      }
+        return [...instructions, transactionInstruction];
+      },
+      []
     );
 
     this._createTransactionSectionStore.createTransaction(
@@ -106,7 +100,6 @@ export class CreateTransactionSectionComponent implements OnInit {
   }
 
   onInstructionSelected(instructionOption: InstructionOption) {
-    this.instructions.push(instructionOption);
     this._transactionForm.addInstruction(instructionOption);
   }
 

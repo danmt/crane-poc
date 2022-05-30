@@ -8,6 +8,7 @@ import { FormlyModule } from '@ngx-formly/core';
 import { CreateTransactionSectionComponent } from './create-transaction-section.component';
 import { FormlyFieldStepperComponent } from './formly-stepper.type';
 import { InstructionAutocompleteModule } from './instruction-autocomplete.module';
+import { StopPropagationModule } from './stop-propagation.module';
 
 @NgModule({
   imports: [
@@ -21,11 +22,11 @@ import { InstructionAutocompleteModule } from './instruction-autocomplete.module
         {
           name: 'stepper',
           component: FormlyFieldStepperComponent,
-          wrappers: [],
         },
       ],
     }),
     InstructionAutocompleteModule,
+    StopPropagationModule,
   ],
   exports: [CreateTransactionSectionComponent],
   declarations: [

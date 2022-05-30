@@ -41,10 +41,8 @@ export interface PluginInterface {
   getInstruction(instructionName: string): IdlInstruction | null;
   getTransactionInstruction(
     instructionName: string,
-    model: {
-      args: { [argName: string]: string };
-      accounts: { [accountName: string]: string };
-    }
+    args: { [argName: string]: string },
+    accounts: { [accountName: string]: string }
   ): TransactionInstruction | null;
 }
 

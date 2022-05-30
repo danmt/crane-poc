@@ -19,10 +19,8 @@ export class SystemPlugin implements PluginInterface {
 
   getTransactionInstruction(
     instructionName: string,
-    model: {
-      args: { [argName: string]: string };
-      accounts: { [accountName: string]: string };
-    }
+    args: { [argName: string]: string },
+    accounts: { [accountName: string]: string }
   ): TransactionInstruction | null {
     const instruction = this.getInstruction(instructionName);
 
@@ -33,13 +31,13 @@ export class SystemPlugin implements PluginInterface {
     return new TransactionInstruction({
       programId: new PublicKey(this.program.programId),
       keys: instruction.accounts.map((account) => ({
-        pubkey: new PublicKey(model.accounts[account.name]),
+        pubkey: new PublicKey(accounts[account.name]),
         isSigner: account.isSigner,
         isWritable: account.isMut,
       })),
       data: this.program.coder.instruction.encode(
         instructionName,
-        toInstructionArguments(instruction, model.args)
+        toInstructionArguments(instruction, args)
       ),
     });
   }

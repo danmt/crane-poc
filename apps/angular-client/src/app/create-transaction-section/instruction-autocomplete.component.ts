@@ -39,9 +39,12 @@ export interface InstructionOption {
                 [src]="'assets/images/' + option.namespace + '.png'"
               />
 
-              <span class="uppercase text-xs">{{ option.name }}</span> |
-
-              <span>{{ option.instruction.name }}</span>
+              <p>
+                <span class="uppercase text-xs">{{ option.name }} | </span>
+              </p>
+              <p>
+                {{ option.instruction.name }}
+              </p>
             </div>
           </mat-option>
         </mat-autocomplete>
