@@ -104,6 +104,7 @@ export class InstructionAutocompleteComponent implements OnInit {
   }
 
   onInstructionSelected(instruction: InstructionOption) {
+    this.searchControl.setValue(null);
     this.instructionSelected.emit(instruction);
   }
 

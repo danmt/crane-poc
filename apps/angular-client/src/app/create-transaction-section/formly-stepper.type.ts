@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import {
   Component,
   ComponentRef,
@@ -155,64 +156,58 @@ export function unregisterControl(
 @Component({
   selector: 'crane-formly-field-stepper',
   template: `
-    <mat-vertical-stepper>
-      <mat-step
+    <div
+      cdkDropList
+      class="flex flex-col gap-4 stepper"
+      (cdkDropListDropped)="drop($event)"
+    >
+      <div
         *ngFor="
           let step of field.fieldGroup;
           let index = index;
           let last = last
         "
+        class="p-4 bg-white bg-opacity-10 step"
+        cdkDrag
       >
-        <ng-template matStepLabel>
-          <div class="w-full flex justify-between items-center">
-            <div class="flex items-center gap-2">
-              <img
-                class="h-5 inline-block"
-                [src]="'assets/images/' + model[index].namespace + '.png'"
-              />
-              <p>
-                <span class="uppercase text-xs"
-                  >{{ model[index].name }} |
-                </span>
-              </p>
-              <p>
-                <span class="text-base">{{ model[index].instruction }} </span>
-              </p>
+        <div class="step-placeholder" *cdkDragPlaceholder></div>
+
+        <div
+          class="w-full flex justify-between items-center cursor-move"
+          cdkDragHandle
+        >
+          <div class="flex items-center gap-2">
+            <div
+              class="flex justify-center items-center w-8 h-8 rounded-full bg-black bg-opacity-25 font-bold"
+            >
+              {{ index + 1 }}
             </div>
 
-            <button
-              mat-icon-button
-              (click)="remove(index)"
-              craneStopPropagation
-              type="button"
-            >
-              <mat-icon>delete</mat-icon>
-            </button>
+            <img
+              class="h-5 inline-block"
+              [src]="'assets/images/' + model[index].namespace + '.png'"
+            />
+            <p>
+              <span class="uppercase text-xs">{{ model[index].name }} | </span>
+            </p>
+            <p>
+              <span class="text-base">{{ model[index].instruction }} </span>
+            </p>
           </div>
-        </ng-template>
+
+          <button
+            mat-icon-button
+            (click)="remove(index)"
+            craneStopPropagation
+            type="button"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+
         <formly-field [field]="step"></formly-field>
 
         <div class="mt-4">
-          <button
-            matStepperPrevious
-            *ngIf="index !== 0"
-            mat-raised-button
-            type="button"
-          >
-            Back
-          </button>
-
-          <button
-            matStepperNext
-            *ngIf="!last"
-            mat-raised-button
-            color="primary"
-            type="button"
-            [disabled]="!isValid(step)"
-          >
-            Next
-          </button>
-
           <button
             *ngIf="last"
             mat-raised-button
@@ -223,9 +218,34 @@ export function unregisterControl(
             Submit
           </button>
         </div>
-      </mat-step>
-    </mat-vertical-stepper>
+      </div>
+    </div>
   `,
+  styles: [
+    `
+      .cdk-drag-preview {
+        box-sizing: border-box;
+        border-radius: 4px;
+        box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+          0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12);
+      }
+
+      .cdk-drag-animating {
+        transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+      }
+
+      .stepper.cdk-drop-list-dragging .step:not(.cdk-drag-placeholder) {
+        transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+      }
+
+      .step-placeholder {
+        background: #ccc;
+        border: dotted 3px #999;
+        min-height: 60px;
+        transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+      }
+    `,
+  ],
 })
 export class FormlyFieldStepperComponent extends FieldType {
   isValid(field: FormlyFieldConfig): boolean {
@@ -248,6 +268,29 @@ export class FormlyFieldStepperComponent extends FieldType {
     this.field.fieldGroup?.splice(index, 1);
     this.field.fieldGroup?.forEach((f, key) => (f.key = `${key}`));
     delete this.model[`${index}`];
+    this._build();
+  }
+
+  drop(event: CdkDragDrop<string[]>) {
+    if (this.field.fieldGroup) {
+      moveItemInArray(
+        this.field.fieldGroup,
+        event.previousIndex,
+        event.currentIndex
+      );
+
+      this.field.fieldGroup?.forEach((f, key) => {
+        f.key = `${key}`;
+      });
+    }
+
+    const temp1 = this.model[event.previousIndex];
+    delete this.model[event.previousIndex];
+    const temp2 = this.model[event.currentIndex];
+    delete this.model[event.currentIndex];
+    this.model[`${event.currentIndex}`] = temp1;
+    this.model[`${event.previousIndex}`] = temp2;
+
     this._build();
   }
 
