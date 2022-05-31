@@ -3,8 +3,9 @@
 export interface Typegen0 {
   '@@xstate/typegen': true;
   eventsCausingActions: {
-    'Save signature in context': 'Rpc Request Machine.Request succeeded';
-    'Start confirm transaction machine': 'confirmTransaction' | '';
+    'Save transaction in context': 'startSigning';
+    'Sign using keypair': 'signTransactionWithKeypair';
+    'Save signature in context': 'signTransactionWithWallet';
   };
   internalEvents: {
     '': { type: '' };
@@ -19,9 +20,11 @@ export interface Typegen0 {
   };
   eventsCausingServices: {};
   eventsCausingGuards: {
-    'auto start enabled': '';
+    'is fire and forget': '';
+    'valid signer': 'signTransactionWithKeypair' | 'signTransactionWithWallet';
+    'signatures done': '';
   };
   eventsCausingDelays: {};
-  matchesStates: 'Idle' | 'Confirming transaction' | 'Transaction confirmed';
+  matchesStates: 'Idle' | 'Transaction signed' | 'Sign transaction' | 'Done';
   tags: never;
 }

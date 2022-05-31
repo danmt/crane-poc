@@ -3,16 +3,7 @@ import { createTransactionServiceFactory } from '@crane/machines';
 import { ConnectionStore } from '@heavy-duty/wallet-adapter';
 import { ComponentStore } from '@ngrx/component-store';
 import { PublicKey, TransactionInstruction } from '@solana/web3.js';
-import {
-  combineLatest,
-  concatMap,
-  filter,
-  map,
-  of,
-  pipe,
-  tap,
-  withLatestFrom,
-} from 'rxjs';
+import { concatMap, of, tap, withLatestFrom } from 'rxjs';
 import { StateFrom } from 'xstate';
 import { isNotNull, Option, tapEffect } from '../utils';
 
@@ -62,25 +53,13 @@ export class CreateTransactionSectionStore extends ComponentStore<ViewModel> {
     super(initialState);
 
     this.start(
-      this._connectionStore.connection$.pipe(
-        isNotNull,
-        map((connection) =>
+      this.select(
+        this._connectionStore.connection$.pipe(isNotNull),
+        (connection) =>
           createTransactionServiceFactory(connection, {
-            eager: false,
-            autoBuild: true,
             fireAndForget: false,
           })
-        )
       )
-    );
-    this.restartMachine(
-      combineLatest({
-        service: this.service$.pipe(isNotNull),
-        state: this.serviceState$.pipe(
-          isNotNull,
-          filter((state) => state.matches('Transaction created'))
-        ),
-      }).pipe(map(({ service }) => service))
     );
   }
 
@@ -97,32 +76,26 @@ export class CreateTransactionSectionStore extends ComponentStore<ViewModel> {
     })
   );
 
-  readonly restartMachine = this.effect<ServiceType>(
-    tap((service) => service.send('restartMachine'))
-  );
-
   readonly createTransaction = this.effect<{
     feePayer: Option<PublicKey>;
     instructions: TransactionInstruction[];
   }>(
-    pipe(
-      concatMap(({ feePayer, instructions }) =>
-        of({ feePayer, instructions }).pipe(
-          withLatestFrom(this.service$),
-          tap(([{ feePayer, instructions }, service]) => {
-            if (service === null || feePayer === null) {
-              return;
-            }
+    concatMap(({ feePayer, instructions }) =>
+      of({ feePayer, instructions }).pipe(
+        withLatestFrom(this.service$),
+        tap(([{ feePayer, instructions }, service]) => {
+          if (service === null || feePayer === null) {
+            return;
+          }
 
-            service.send({
-              type: 'createTransaction',
-              value: {
-                feePayer,
-                instructions,
-              },
-            });
-          })
-        )
+          service.send({
+            type: 'createTransaction',
+            value: {
+              feePayer,
+              instructions,
+            },
+          });
+        })
       )
     )
   );

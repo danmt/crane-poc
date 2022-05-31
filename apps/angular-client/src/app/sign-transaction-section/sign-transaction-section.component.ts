@@ -1,7 +1,7 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, Input, Output } from '@angular/core';
 import { WalletStore } from '@heavy-duty/wallet-adapter';
 import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
-import { combineLatest, filter, map, of, take, takeUntil } from 'rxjs';
+import { filter, map } from 'rxjs';
 import { isNotNull } from '../utils';
 import { SignTransactionSectionStore } from './sign-transaction-section.store';
 
@@ -33,7 +33,7 @@ import { SignTransactionSectionStore } from './sign-transaction-section.store';
             [disabled]="disabled$ | async"
             mat-raised-button
             color="accent"
-            (click)="onSignTransactionWithWallet(transaction)"
+            (click)="onSignTransactionWithWallet(publicKey, transaction)"
           >
             Sign
           </button>
@@ -56,43 +56,33 @@ import { SignTransactionSectionStore } from './sign-transaction-section.store';
   `,
   providers: [SignTransactionSectionStore],
 })
-export class SignTransactionSectionComponent implements OnInit {
+export class SignTransactionSectionComponent {
   readonly publicKey$ = this._walletStore.publicKey$;
   readonly transaction$ = this._signTransactionSectionStore.transaction$;
   readonly disabled$ = this._signTransactionSectionStore.disabled$;
   readonly signatures$ = this._signTransactionSectionStore.signatures$;
 
-  @Input() set signer(value: PublicKey | null) {
-    if (value !== null) {
-      this._signTransactionSectionStore.setSigner(value);
-    }
-  }
   @Input() set transaction(value: Transaction | null) {
-    if (value !== null) {
-      this._signTransactionSectionStore.setTransaction(value);
+    if (value !== null && !value.verifySignatures()) {
+      this._signTransactionSectionStore.startSigning(value);
     }
   }
 
-  @Output() transactionSigned = new EventEmitter();
+  @Output() transactionSigned =
+    this._signTransactionSectionStore.serviceState$.pipe(
+      isNotNull,
+      filter(
+        (state) => state.matches('Transaction signed') && state.changed === true
+      ),
+      map(({ context: { transaction } }) => transaction ?? null)
+    );
 
   constructor(
     private readonly _walletStore: WalletStore,
     private readonly _signTransactionSectionStore: SignTransactionSectionStore
   ) {}
 
-  ngOnInit() {
-    this._signTransactionSectionStore.serviceState$
-      .pipe(
-        isNotNull,
-        filter((state) => state.matches('Transaction signed')),
-        takeUntil(this._signTransactionSectionStore.destroy$)
-      )
-      .subscribe(({ context }) =>
-        this.transactionSigned.emit(new Transaction(context.transaction))
-      );
-  }
-
-  onSignTransactionWithWallet(transaction: Transaction) {
+  onSignTransactionWithWallet(publicKey: PublicKey, transaction: Transaction) {
     const signTransaction$ = this._walletStore.signTransaction(
       new Transaction(transaction)
     );
@@ -102,22 +92,16 @@ export class SignTransactionSectionComponent implements OnInit {
     }
 
     this._signTransactionSectionStore.signTransactionWithWallet(
-      combineLatest({
-        service: this._signTransactionSectionStore.service$,
-        publicKey: this._walletStore.publicKey$,
-        signature: signTransaction$.pipe(
-          map((transaction) => transaction.signature)
-        ),
-      }).pipe(take(1))
+      signTransaction$.pipe(
+        map((transaction) => ({
+          publicKey,
+          signature: transaction.signature,
+        }))
+      )
     );
   }
 
   onSignTransactionWithKeypair(keypair: Keypair) {
-    this._signTransactionSectionStore.signTransactionWithKeypair(
-      combineLatest({
-        service: this._signTransactionSectionStore.service$,
-        keypair: of(keypair),
-      }).pipe(take(1))
-    );
+    this._signTransactionSectionStore.signTransactionWithKeypair(keypair);
   }
 }

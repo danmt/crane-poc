@@ -1,14 +1,12 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  EventEmitter,
   Input,
-  OnInit,
   Output,
 } from '@angular/core';
 import { Transaction } from '@solana/web3.js';
-import { filter, take, takeUntil } from 'rxjs';
-import { isNotNull } from '../utils';
+import { filter, map } from 'rxjs';
+import { isNotNull, Option } from '../utils';
 import { SendTransactionButtonStore } from './send-transaction-button.store';
 
 @Component({
@@ -25,34 +23,29 @@ import { SendTransactionButtonStore } from './send-transaction-button.store';
   providers: [SendTransactionButtonStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SendTransactionButtonComponent implements OnInit {
+export class SendTransactionButtonComponent {
   readonly disabled$ = this._sendTransactionButtonStore.disabled$;
 
-  @Input() set transaction(value: Transaction | null) {
+  @Input() set transaction(value: Option<Transaction>) {
     if (value !== null && value.verifySignatures()) {
-      this._sendTransactionButtonStore.setTransaction(value);
+      this._sendTransactionButtonStore.startSending(value);
     }
   }
 
-  @Output() transactionSent = new EventEmitter();
+  @Output() transactionSent =
+    this._sendTransactionButtonStore.serviceState$.pipe(
+      isNotNull,
+      filter(
+        (state) => state.matches('Transaction sent') && state.changed === true
+      ),
+      map(({ context }) => context.signature ?? null)
+    );
 
   constructor(
     private readonly _sendTransactionButtonStore: SendTransactionButtonStore
   ) {}
 
-  ngOnInit() {
-    this._sendTransactionButtonStore.serviceState$
-      .pipe(
-        isNotNull,
-        filter((state) => state.matches('Transaction sent')),
-        takeUntil(this._sendTransactionButtonStore.destroy$)
-      )
-      .subscribe(({ context }) => this.transactionSent.emit(context.signature));
-  }
-
   onSendTransaction() {
-    this._sendTransactionButtonStore.sendTransaction(
-      this._sendTransactionButtonStore.service$.pipe(take(1))
-    );
+    this._sendTransactionButtonStore.sendTransaction();
   }
 }

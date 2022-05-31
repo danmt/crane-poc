@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { blockhashStatusServiceFactory } from '@crane/machines';
 import { ConnectionStore } from '@heavy-duty/wallet-adapter';
 import { ComponentStore } from '@ngrx/component-store';
-import { concatMap, map, of, pipe, tap, withLatestFrom } from 'rxjs';
+import { concatMap, of, tap, withLatestFrom } from 'rxjs';
 import { StateFrom } from 'xstate';
 import { isNotNull, Option, tapEffect } from '../utils';
 
@@ -40,13 +40,12 @@ export class BlockhashStatusSectionStore extends ComponentStore<ViewModel> {
     super(initialState);
 
     this.start(
-      this._connectionStore.connection$.pipe(
-        isNotNull,
-        map((connection) =>
-          blockhashStatusServiceFactory(connection, undefined, undefined, {
+      this.select(
+        this._connectionStore.connection$.pipe(isNotNull),
+        (connection) =>
+          blockhashStatusServiceFactory(connection, {
             fireAndForget: false,
           })
-        )
       )
     );
   }
@@ -64,26 +63,20 @@ export class BlockhashStatusSectionStore extends ComponentStore<ViewModel> {
     })
   );
 
-  readonly restartMachine = this.effect<ServiceType>(
-    tap((service) => service.send('restartMachine'))
-  );
-
   readonly getSlot = this.effect<Option<number>>(
-    pipe(
-      concatMap((lastValidBlockHeight) =>
-        of(lastValidBlockHeight).pipe(
-          withLatestFrom(this.service$),
-          tap(([lastValidBlockHeight, service]) => {
-            if (service === null || lastValidBlockHeight === null) {
-              return;
-            }
+    concatMap((lastValidBlockHeight) =>
+      of(lastValidBlockHeight).pipe(
+        withLatestFrom(this.service$),
+        tap(([lastValidBlockHeight, service]) => {
+          if (service === null || lastValidBlockHeight === null) {
+            return;
+          }
 
-            service.send({
-              type: 'getSlot',
-              value: lastValidBlockHeight,
-            });
-          })
-        )
+          service.send({
+            type: 'getSlot',
+            value: lastValidBlockHeight,
+          });
+        })
       )
     )
   );

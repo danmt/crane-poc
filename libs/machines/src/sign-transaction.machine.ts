@@ -29,35 +29,36 @@ export type SignTransactionMachineServices = {
   };
 };
 
-export const signTransactionMachineFactory = (
-  transaction: Transaction | undefined,
-  config?: { eager: boolean }
-) => {
-  /** @xstate-layout N4IgpgJg5mDOIC5QGUCWUB2ACALgJwEMNYCBjHVAe2wFsyALVDMAOgEkIAbMAYlhwJ4caTEyiJQAB0qxUFahJAAPRAFoALACYAHC23qAzAHZ16gIwBOIwYCsmiwBoQATzVmjANhY2rH7f5sDD00zA00AX3CnEWx8IhJyKloGJlYObh5FaVl5DEUVBFV3MxZNMIMABiMbdW0DCwr1GydXQvsDFnUK21MjbU0bG31I6PRYwmIyXKw6UkZmFhjcCYTcvjGAFRWppIB1OXoAaTBnSQJUPCyZOST8xCHOqoa-EOr1C2aXNSaWdz9zeraDwWWxmEYgJZxSaJagzFILSHbGEYdaYLbxHbUfY4ei7Aicbg4K45W5IZRqerqFgfWraCpmMz6AzqDwtb42X6efShCxAkE2MFRCFjZYY5FwuapRYiqGrJKZMnZG4KMkFSwcmz0yz1MoC3maNmFRkczT0qxGbpVd6hSJCjCUCBwRSIsXTWbzNJcMDE5V5VUUuosIKad50mweJrWT6tVT2CzU7o1UIh-SaAbgl3Qt3w1jorNJLCyTCQH25O4IU0VIMWd5DSzPHSG2MWeMNHp2PzGAZGDMypHZyUIvuu0lSa5l-1G97U3oeMweDw+DyVAxN+cdHyeKwWEPWC0RIWZuWw92pUuj8mFJqaPSGEzmKy2exNrsJ2ygnymne28JAA */
+export const signTransactionMachineFactory = (config?: {
+  fireAndForget: boolean;
+}) => {
+  /** @xstate-layout N4IgpgJg5mDOIC5QGUCWUB2ACALgJwEMNYCBjHVAe2wFsyALVDMAOgBVDiyLqtZ1mEAMSJQAB0r8eGUSAAeiAMyKArCwAcABgCMANkXqATCoCcqgCzmANCACeiALSHz6ltsO6T2gOwvDizxUAXyCbNExcThJyKloGJlZw7HwiaOkhfkwOVO5YgHVUHHoAaTBbMQJUPFkJKVjZBQQHTxZFc0UdDzMXXV11G3sETRZNExNvbxN1RW1tc29-TXV1ELCBSJyY3jpSRmYWJI2uLYwMgWzj6QKivIIAGzuwHBrJQvqkeUcVQ0MWb00VJMTPoAt5dIYBohhqNxpNprN5otlqsQIcUpdYlgdntEut0WlYiIPrU3tQGohdN4-ipNIZfOYlnT1NoTJCmtpFCYWCZjKoVFpRktzCi0VFctt4swMjgCHgcEkmFAXnUyR9Gk4vG4VCz-OZ+YZNL02U5DK4GTTNLSzP4FsKURhKBA4LJRZtpFjJawAJIQR7K0kyNWOcw8lgeFTg0yc8zgxTG4zmFjgzzOTQGFQzaYivFik4e3YJdi592ZQT+6TkhALJOWNPqPoGQyzfp2RwJpNdVPpzOKbMRfHiuIF-aujGq8SvCtBpp0qmBPrN9yaebG5utJuaMGeFzA0195LFzHYwsAEWoYHL71AjUbIwN6YN2nUZl0xrBbjaJhU828GZphn3I4CQlYcL2JScr0+Jpv10P4ASBEFKXBY1lC5ZMzH1FwATaEIQiAA */
   return createMachine(
     {
-      context: { transaction, signatures: [] as SignaturePubkeyPair[] },
+      context: {
+        transaction: undefined as Transaction | undefined,
+        signatures: [] as SignaturePubkeyPair[],
+      },
       tsTypes: {} as import('./sign-transaction.machine.typegen').Typegen0,
       schema: {
         events: {} as SignTransactionMachineEvent,
         services: {} as SignTransactionMachineServices,
       },
+      on: {
+        startSigning: {
+          actions: 'Save transaction in context',
+          target: '.Sign transaction',
+          internal: false,
+        },
+      },
       initial: 'Idle',
       states: {
-        Idle: {
-          always: {
-            cond: 'auto start enabled',
-            target: 'Sign transaction',
-          },
-          on: {
-            startSigning: {
-              actions: 'Save transaction in context',
-              target: 'Sign transaction',
-            },
-          },
-        },
+        Idle: {},
         'Transaction signed': {
-          type: 'final',
+          always: {
+            cond: 'is fire and forget',
+            target: 'Done',
+          },
         },
         'Sign transaction': {
           always: {
@@ -75,6 +76,9 @@ export const signTransactionMachineFactory = (
             },
           },
         },
+        Done: {
+          type: 'final',
+        },
       },
       id: 'Sign transaction machine',
     },
@@ -82,8 +86,8 @@ export const signTransactionMachineFactory = (
       actions: {
         'Save transaction in context': assign({
           transaction: (_, event) => event.value,
+          signatures: (_) => [],
         }),
-        // Is it easy to get the signature only using wallet adapter?
         'Save signature in context': assign({
           signatures: (context, event) => [
             ...context.signatures,
@@ -138,15 +142,14 @@ export const signTransactionMachineFactory = (
 
           return message.isAccountSigner(accountIndex);
         },
-        'auto start enabled': () => config?.eager ?? false,
+        'is fire and forget': () => config?.fireAndForget ?? false,
       },
     }
   );
 };
 
-export const signTransactionServiceFactory = (
-  transaction: Transaction | undefined,
-  config?: { eager: boolean }
-) => {
-  return interpret(signTransactionMachineFactory(transaction, config));
+export const signTransactionServiceFactory = (config?: {
+  fireAndForget: boolean;
+}) => {
+  return interpret(signTransactionMachineFactory(config));
 };

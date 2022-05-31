@@ -10,18 +10,13 @@ type GetSlotEvent = EventType<'getSlot'> & EventValue<number>;
 
 type UpdateSlotEvent = EventType<'updateSlot'> & EventValue<SlotInfo>;
 
-type RestartMachineEvent = EventType<'restartMachine'>;
-
 type BlockhashStatusMachineEvent =
   | RpcRequestSuccess<number>
   | GetSlotEvent
-  | UpdateSlotEvent
-  | RestartMachineEvent;
+  | UpdateSlotEvent;
 
 export const blockhashStatusMachineFactory = (
   connection: Connection,
-  lastValidBlockHeight: number | undefined,
-  initialSlot: number | undefined,
   config?: { fireAndForget: boolean }
 ) => {
   const getSlotMachine = () =>
@@ -30,12 +25,12 @@ export const blockhashStatusMachineFactory = (
       fireAndForget: true,
     });
 
-  /** @xstate-layout N4IgpgJg5mDOIC5QCEA2B7AxgawBYENZcACAZQBd9yBXWYgWX01wEsA7MAOgHExzz2UYrAzkAxACUADpmISwAR2pxyDJqw6d5SlcOqZMYSJESgp6WCwHo2pkAA9EAWgBsARgDMnNwE4ATB4uAAwArAAsfkE+IQDsADQgAJ7OHiF+nCFuUR5+bgAcLn4hLjEAvqUJaFh4hCQUVLRqzOxcAOpUzWxCIuiqsJQ0sGLUUhBUYKSiduaW1rZIDs5uMXmcMT4+Yb4hQUF+7uEJyQhOuT6ceZuhbjuFPm7llRg4BERkA42MnW0dGt2iwg+Q2mFisLBsdkcCCyQU4PjyeRiYQ8HjcfkiPiCYSOzhCCM4LkRuw8oR8gRcYUeICqL1q7wadC+Gi4k16xHYADd8KgWBAxCDZuD5qAoajYVk3MEfC5NsUyTiTmEgm4Mj4kXkdqEVhsXFSaTU3vVBk1mWIYORWeQBWCIQsoU4PHkwpw9iS1TFHXlAn4Fa4gqt8jFdjEXIUtmjyhUQGx0BA4HZ9a86kCTS0eHwBF1hFMFjMbcLFic8V5PMFEW5kbFkb6wpiXR6ER4wi4PBtwrqo4m6UbPuo0+1yJ1-mz+gzrXNIc4MS7Av48X4gyEQh54kkUi4Qi6smTPJK3DcfHrngbkwzU5pLey2FyeRBx0LJ9CwpugjK1SUZWkZS5fajzjFMmbG4NTSMI8iPaok3pY0mTTAARGwwHvW0RUQVIXE4HIglRdZMg9e5fXRc4F32V80RCe4sQg2lDRTWCOGQgt7RbGJvH8QJQgiKJYl9GUSyJbCl2XZsO3KIA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QCEA2B7AxgawBYENZcACAZQBd9yBXWYgWX01wEsA7MAOgHExzz2UYrAzkAxACUADpmISwAR2pxyDJqw6d5SlcOqZMYSJESgp6WCwHo2pkAA9EAWgCsLgOycXAZhcAWbwBObwAOACZAgAZAvwAaEABPZwCARk4QqL8QrOCXSL9AgF9C+LQsPEISCipaNWZ2LgB1Knq2IRF0VVhKGlgxaikIKjBSUTtzS2tbJAdnFLDvThS-MIKQ7z8UyPcXMJD4pIQnCMDOMPdvADZ8sJTfILDi0owcAiIyHtrGVqaWjXbRMJPn1xhYrCwbHZHAgUi5LpxLn44Yi-O47oEfAdnJdLiFOJEcW4PDjLstLk8QGVXpUPjU6N8NFxRp1iOwAG74VAsCBiUGTCHTUDQq4uTg7EI+SIS7w7NzeLFHLKRTiBdzuSIytHeDUhFLkkqUl4Vd7VXp1RliGDkZnkPngyEzaFObx7ThXUnuS4eQKIwI+hVOXGeZFwjWXH0uGLFA1sdAQOB2KnGqrA80NHh8ARtYRjGYTe2C2ZHXaeVGBPWR7KhfaJZxw05IjZXFJo1YyilJt4pulpzTNcitAEs7p0u1TKFzHxukKRWd+HHuELh+YBvxrt2ZbKRBZXTYdo1d2lmhnpm2stgcrkQMcCicIMKzsVhXGqwJ7LWrANBU53LbLCLnBc+7lIeppfOo6YACI2GAN4OkKiCbGkqruAs5ZbG+-hflKCK7LCITrN4+H6s8IE0mB9IQZoACSECoLBeZguOjp1hEYoEqqBEakRiIBpc7h+F4hIXJxOJ6sB1ImqmJ4cHBhZOi4upeL4ATBOEUQxAGaphEJXoBLc+ThPqxRAA */
   return createMachine(
     {
       context: {
-        lastValidBlockHeight,
-        initialSlot,
+        lastValidBlockHeight: undefined as number | undefined,
+        initialSlot: undefined as number | undefined,
         currentSlot: undefined as number | undefined,
         initialGap: undefined as number | undefined,
         currentGap: undefined as number | undefined,
@@ -53,7 +48,7 @@ export const blockhashStatusMachineFactory = (
           target: '.Getting slot',
         },
       },
-      initial: 'Getting slot',
+      initial: 'Idle',
       states: {
         'Getting slot': {
           entry: 'Start get slot machine',
@@ -88,6 +83,7 @@ export const blockhashStatusMachineFactory = (
         Done: {
           type: 'final',
         },
+        Idle: {},
       },
       id: 'Blockhash Status Machine',
     },
@@ -144,16 +140,7 @@ export const blockhashStatusMachineFactory = (
 
 export const blockhashStatusServiceFactory = (
   connection: Connection,
-  lastValidBlockHeight: number | undefined,
-  initialSlot: number | undefined,
   config?: { fireAndForget: boolean }
 ) => {
-  return interpret(
-    blockhashStatusMachineFactory(
-      connection,
-      lastValidBlockHeight,
-      initialSlot,
-      config
-    )
-  );
+  return interpret(blockhashStatusMachineFactory(connection, config));
 };

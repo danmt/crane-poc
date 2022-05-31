@@ -4,18 +4,20 @@ import {
   rpcRequestMachineFactory,
   RpcRequestSuccess,
 } from './rpc-request.machine';
-import { EventType } from './types';
+import { EventType, EventValue } from './types';
+
+type StartSendingEvent = EventType<'startSending'> & EventValue<Transaction>;
 
 type SendTransactionEvent = EventType<'sendTransaction'>;
 
 type SendTransactionMachineEvent =
   | RpcRequestSuccess<TransactionSignature>
+  | StartSendingEvent
   | SendTransactionEvent;
 
 export const sendTransactionMachineFactory = (
   connection: Connection,
-  transaction: Transaction,
-  config?: { eager: boolean }
+  config?: { fireAndForget: boolean }
 ) => {
   const sendRawTransactionFactory = (transaction: Transaction) =>
     rpcRequestMachineFactory(
@@ -26,11 +28,11 @@ export const sendTransactionMachineFactory = (
       }
     );
 
-  /** @xstate-layout N4IgpgJg5mDOIC5QGUwDsIAIAuAnAhmrPgMbYCWA9mpgLakAW5aYAdAJIQA2YAxIqAAOlWOQrUBIAB6IAtACZ5AVlYBmJQA4ALEvlatAdiX75BgDQgAnnICMAThut5ANjsAGG-bd7Vbt1oBfAItUDBwCIlJxGnoSJhYObj5YdAgAFQjiMio0SWFRaMkZBFlVOztWOwM3O2dNTS0NGw0LaxKbZ0cdbo1nOu1epSCQ1PDCLOi6RmY2UIhmKDHI7OpeACVBEkw1sABHAFc4bEwAWWmEnYOjzFh9khIwSEg8kTEcosQtN1Y65q1TDRKNwGOw6VpyAysDRGaEGAwaVT6GyqZpBYIgNCUCBwSRzJYTHJTOIzRI8F4Fd5IaRyVSqSGggw2NxKdTwuymcElXzfRHONyqXrOFzuGxDdF4vDjKKE2LxWapBb46USKn5N4q0DFWRaWlQ9yaPzybRuZychQ8mEaJq+AzyUUGYYgCWZZUxc5sDJSlY0FJobDk9W5KnFJkVbRKJSM5yM7zydlmmz6KHORq0twadPVOGO51eyaymYBwrBuQ6SEafUZ7zG01WGkGVRqLR8rQ2I1fDwdNEBIA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QGUwDsIAIAuAnAhmrPgMbYCWA9mpgLakAW5aYAdKhs1DgUaRdQDEAJQAOJTMLABHAK5xsmALKNmbKXIWZYskiTCRIiUKMqxyAtMZAAPRAFoAbI9YBmAIwBOAEyfPrz0cABgB2bxCAGhAATwcQ1gAOEIBWJJCQhNcAFiz3DwSAXwKojiw8QmIyKhp6EiYWVgAVXkrLbXRsQWtTc0trOwRXcNZvPMdXbMd3KNiEezzk1ncszwTk9yDU1wT3cKKS9DKW-mq6VQbmipPqTFwwfAhowVhDy74q6m6zC2r+h1cwqwQrktgkgp5ckEgq4Zg5PPFXI4smFtiDgSFPPsQKUeFcPjVzmBnth8LhsKUuF9er8kLYHFlNqwgrlgkFvNtlslxrC5r53Kwst4EkKgpkNkKQkViiA0JQIHBrDjyu82rV6mwAJIQAA2YCpP0+tIGuyCrE87h2UPcyRyUOS3h59m8yVNiPSovG7mtDMl0qVx3xZzqanYhy4uJVNJM3z6Rvp6SW5uCri5yXWFsd3ldKQSCT8jhtu0cKSx-rxqsJTQDbReaGw+tjoAG3kSwKy4yFyyy22cjuW-KRqy2-mcmW8pcOEdapzVIYAItQ9bSegarHHBoCkgXwbnHIEdpEYohFrsGcKXRMhtDXBOMFPrgTgxdq6c7g9ZtHqYam-9Aol4ZkHjIi6jh9hiIy5q4bIZEEwQbL6Bx3sq043LOLANlGdJzC6-JeO4yapumCSOgCLiCsKOy7DaQzJDeUpAA */
   return createMachine(
     {
       context: {
-        transaction,
+        transaction: undefined as Transaction | undefined,
         error: undefined as unknown,
         signature: undefined as TransactionSignature | undefined,
         sendRawTransactionRef: undefined as
@@ -39,19 +41,15 @@ export const sendTransactionMachineFactory = (
       },
       tsTypes: {} as import('./send-transaction.machine.typegen').Typegen0,
       schema: { events: {} as SendTransactionMachineEvent },
+      on: {
+        startSending: {
+          actions: 'Save transaction in context',
+          target: '.Transaction ready',
+        },
+      },
       initial: 'Idle',
       states: {
-        Idle: {
-          always: {
-            cond: 'auto start enabled',
-            target: 'Sending transaction',
-          },
-          on: {
-            sendTransaction: {
-              target: 'Sending transaction',
-            },
-          },
-        },
+        Idle: {},
         'Sending transaction': {
           entry: 'Start send raw transaction machine',
           on: {
@@ -62,7 +60,20 @@ export const sendTransactionMachineFactory = (
           },
         },
         'Transaction sent': {
+          always: {
+            cond: 'is fire and forget',
+            target: 'Done',
+          },
+        },
+        Done: {
           type: 'final',
+        },
+        'Transaction ready': {
+          on: {
+            sendTransaction: {
+              target: 'Sending transaction',
+            },
+          },
         },
       },
       id: 'Send transaction machine',
@@ -74,13 +85,18 @@ export const sendTransactionMachineFactory = (
         }),
         'Start send raw transaction machine': assign({
           sendRawTransactionRef: ({ transaction }) =>
-            spawn(sendRawTransactionFactory(transaction), {
-              name: 'send-raw-transaction',
-            }),
+            transaction
+              ? spawn(sendRawTransactionFactory(transaction), {
+                  name: 'send-raw-transaction',
+                })
+              : undefined,
+        }),
+        'Save transaction in context': assign({
+          transaction: (_, event) => event.value,
         }),
       },
       guards: {
-        'auto start enabled': () => config?.eager ?? false,
+        'is fire and forget': () => config?.fireAndForget ?? false,
       },
     }
   );
@@ -88,10 +104,7 @@ export const sendTransactionMachineFactory = (
 
 export const sendTransactionServiceFactory = (
   connection: Connection,
-  transaction: Transaction,
-  config?: { eager: boolean }
+  config?: { fireAndForget: boolean }
 ) => {
-  return interpret(
-    sendTransactionMachineFactory(connection, transaction, config)
-  );
+  return interpret(sendTransactionMachineFactory(connection, config));
 };

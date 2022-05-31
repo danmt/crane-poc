@@ -1,9 +1,9 @@
 import { Component, Output } from '@angular/core';
 import { WalletStore } from '@heavy-duty/wallet-adapter';
-import { TransactionInstruction } from '@solana/web3.js';
-import { combineLatest, filter, map, of } from 'rxjs';
+import { PublicKey, TransactionInstruction } from '@solana/web3.js';
+import { filter, map } from 'rxjs';
 import { PluginsService } from '../plugins';
-import { isNotNull } from '../utils';
+import { isNotNull, Option } from '../utils';
 import { CreateTransactionSectionStore } from './create-transaction-section.store';
 import { InstructionOption } from './instruction-autocomplete.component';
 import {
@@ -27,17 +27,19 @@ import {
         (instructionSelected)="onInstructionSelected($event)"
       ></crane-instruction-autocomplete>
 
-      <form
-        *ngIf="transactionForm$ | async as transactionForm"
-        [formGroup]="transactionForm.form"
-        (ngSubmit)="onBuildTransaction(transactionForm.model)"
-      >
-        <formly-form
-          [form]="transactionForm.form"
-          [fields]="[transactionForm.fields]"
-          [model]="transactionForm.model"
-        ></formly-form>
-      </form>
+      <ng-container *ngrxLet="authority$; let authority">
+        <form
+          *ngIf="transactionForm$ | async as transactionForm"
+          [formGroup]="transactionForm.form"
+          (ngSubmit)="onBuildTransaction(authority, transactionForm.model)"
+        >
+          <formly-form
+            [form]="transactionForm.form"
+            [fields]="[transactionForm.fields]"
+            [model]="transactionForm.model"
+          ></formly-form>
+        </form>
+      </ng-container>
     </section>
   `,
   providers: [TransactionFormService, CreateTransactionSectionStore],
@@ -64,7 +66,10 @@ export class CreateTransactionSectionComponent {
     private readonly _createTransactionSectionStore: CreateTransactionSectionStore
   ) {}
 
-  onBuildTransaction(model: TransactionFormModel) {
+  onBuildTransaction(
+    authority: Option<PublicKey>,
+    model: TransactionFormModel
+  ) {
     const instructions = Object.values(model).reduce(
       (
         instructions: TransactionInstruction[],
@@ -84,12 +89,10 @@ export class CreateTransactionSectionComponent {
       []
     );
 
-    this._createTransactionSectionStore.createTransaction(
-      combineLatest({
-        feePayer: this._walletStore.publicKey$,
-        instructions: of(instructions),
-      })
-    );
+    this._createTransactionSectionStore.createTransaction({
+      feePayer: authority,
+      instructions,
+    });
   }
 
   onInstructionSelected(instructionOption: InstructionOption) {

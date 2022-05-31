@@ -3,8 +3,8 @@
 export interface Typegen0 {
   '@@xstate/typegen': true;
   eventsCausingActions: {
-    'Add signature to transaction': 'partialSign';
-    'Notify invalid signer error': 'partialSign';
+    'Save signature in context': 'startConfirming';
+    'Start confirm transaction machine': 'confirmTransaction';
   };
   internalEvents: {
     '': { type: '' };
@@ -19,11 +19,14 @@ export interface Typegen0 {
   };
   eventsCausingServices: {};
   eventsCausingGuards: {
-    'valid signer': 'partialSign';
-    'signatures verified': '';
-    'auto start enabled': '';
+    'is fire and forget': '';
   };
   eventsCausingDelays: {};
-  matchesStates: 'Signing transaction' | 'Transaction Signed' | 'Idle';
+  matchesStates:
+    | 'Idle'
+    | 'Confirming transaction'
+    | 'Transaction confirmed'
+    | 'Done'
+    | 'Signature ready';
   tags: never;
 }

@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { signTransactionServiceFactory } from '@crane/machines';
+import { WalletStore } from '@heavy-duty/wallet-adapter';
 import { ComponentStore } from '@ngrx/component-store';
 import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
-import { map, tap } from 'rxjs';
+import { concatMap, of, tap, withLatestFrom } from 'rxjs';
 import { StateFrom } from 'xstate';
-import { isNotNull, Option, tapEffect } from '../utils';
+import { Option, tapEffect } from '../utils';
 
 type ServiceType = ReturnType<typeof signTransactionServiceFactory>;
 type StateType = StateFrom<ServiceType['machine']>;
@@ -12,30 +13,28 @@ type StateType = StateFrom<ServiceType['machine']>;
 interface ViewModel {
   service: Option<ServiceType>;
   serviceState: Option<StateType>;
-  transaction: Option<Transaction>;
-  signer: Option<PublicKey>;
 }
 
 const initialState: ViewModel = {
   service: null,
   serviceState: null,
-  transaction: null,
-  signer: null,
 };
 
 @Injectable()
 export class SignTransactionSectionStore extends ComponentStore<ViewModel> {
   readonly service$ = this.select(({ service }) => service);
   readonly serviceState$ = this.select(({ serviceState }) => serviceState);
-  readonly transaction$ = this.select(({ transaction }) => transaction);
+  readonly transaction$ = this.select(
+    this.serviceState$,
+    (serviceState) => serviceState?.context.transaction ?? null
+  );
   readonly signatures$ = this.select(
     this.serviceState$,
-    (serviceState) => serviceState?.context.signatures ?? []
+    (serviceState) => serviceState?.context.signatures ?? null
   );
-  readonly signer$ = this.select(({ signer }) => signer);
   readonly disabled$ = this.select(
     this.serviceState$,
-    this.signer$,
+    this._walletStore.publicKey$,
     (serviceState, signer) =>
       serviceState === null ||
       signer === null ||
@@ -45,30 +44,15 @@ export class SignTransactionSectionStore extends ComponentStore<ViewModel> {
       })
   );
 
-  constructor() {
+  constructor(private readonly _walletStore: WalletStore) {
     super(initialState);
 
     this.start(
-      this.transaction$.pipe(
-        isNotNull,
-        map((transaction) =>
-          signTransactionServiceFactory(transaction, {
-            eager: true,
-          })
-        )
-      )
+      signTransactionServiceFactory({
+        fireAndForget: false,
+      })
     );
   }
-
-  readonly setTransaction = this.updater<Transaction>((state, transaction) => ({
-    ...state,
-    transaction,
-  }));
-
-  readonly setSigner = this.updater<PublicKey>((state, signer) => ({
-    ...state,
-    signer,
-  }));
 
   readonly start = this.effect<ServiceType>(
     tapEffect((service) => {
@@ -83,36 +67,63 @@ export class SignTransactionSectionStore extends ComponentStore<ViewModel> {
     })
   );
 
+  readonly startSigning = this.effect<Option<Transaction>>(
+    concatMap((transaction) =>
+      of(transaction).pipe(
+        withLatestFrom(this.service$),
+        tap(([transaction, service]) => {
+          if (service === null || transaction === null) {
+            return;
+          }
+
+          service.send({
+            type: 'startSigning',
+            value: transaction,
+          });
+        })
+      )
+    )
+  );
+
   readonly signTransactionWithWallet = this.effect<{
-    service: Option<ServiceType>;
     publicKey: Option<PublicKey>;
     signature: Option<Buffer>;
   }>(
-    tap(({ service, publicKey, signature }) => {
-      if (service === null || publicKey === null || signature === null) {
-        return;
-      }
+    concatMap(({ publicKey, signature }) =>
+      of({ publicKey, signature }).pipe(
+        withLatestFrom(this.service$),
+        tap(([{ publicKey, signature }, service]) => {
+          if (service === null || publicKey === null || signature === null) {
+            return;
+          }
 
-      service.send({
-        type: 'signTransactionWithWallet',
-        value: { publicKey, signature },
-      });
-    })
+          service.send({
+            type: 'signTransactionWithWallet',
+            value: {
+              publicKey,
+              signature,
+            },
+          });
+        })
+      )
+    )
   );
 
-  readonly signTransactionWithKeypair = this.effect<{
-    service: Option<ServiceType>;
-    keypair: Keypair;
-  }>(
-    tap(({ service, keypair }) => {
-      if (service === null) {
-        return;
-      }
+  readonly signTransactionWithKeypair = this.effect<Keypair>(
+    concatMap((keypair) =>
+      of(keypair).pipe(
+        withLatestFrom(this.service$),
+        tap(([keypair, service]) => {
+          if (service === null) {
+            return;
+          }
 
-      service.send({
-        type: 'signTransactionWithKeypair',
-        value: keypair,
-      });
-    })
+          service.send({
+            type: 'signTransactionWithKeypair',
+            value: keypair,
+          });
+        })
+      )
+    )
   );
 }

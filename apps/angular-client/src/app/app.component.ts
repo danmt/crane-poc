@@ -25,7 +25,6 @@ import { Option } from './utils';
 
         <crane-sign-transaction-section
           [transaction]="transaction$ | async"
-          [signer]="(authority$ | async) ?? null"
           (transactionSigned)="onTransactionSignDone($event)"
         >
         </crane-sign-transaction-section>
@@ -57,8 +56,6 @@ export class AppComponent implements OnInit {
   private readonly _signature = new BehaviorSubject<
     Option<TransactionSignature>
   >(null);
-  readonly connection$ = this._connectionStore.connection$;
-  readonly authority$ = this._walletStore.publicKey$;
   readonly transaction$ = this._transaction.asObservable();
   readonly latestBlockhash$ = this._latestBlockhash.asObservable();
   readonly signature$ = this._signature.asObservable();
@@ -87,11 +84,11 @@ export class AppComponent implements OnInit {
     this._transaction.next(transaction);
   }
 
-  onTransactionSignDone(transaction: Transaction) {
-    this._transaction.next(transaction);
+  onTransactionSignDone(transaction: Option<Transaction>) {
+    this._transaction.next(new Transaction(transaction ?? undefined));
   }
 
-  onTransactionSent(signature: TransactionSignature) {
+  onTransactionSent(signature: Option<TransactionSignature>) {
     this._signature.next(signature);
   }
 

@@ -1,6 +1,6 @@
 import { Component, Input, Output } from '@angular/core';
 import { filter } from 'rxjs';
-import { Option } from '../utils';
+import { isNotNull, Option } from '../utils';
 import { BlockhashStatusSectionStore } from './blockhash-status-section.store';
 
 @Component({
@@ -81,7 +81,8 @@ export class BlockhashStatusSectionComponent {
   }
   @Output() blockhashExpired =
     this._blockhashStatusSectionStore.serviceState$.pipe(
-      filter((state) => state?.matches('Slot invalid') ?? false)
+      isNotNull,
+      filter((state) => state.matches('Slot invalid') && state.changed === true)
     );
 
   constructor(

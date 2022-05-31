@@ -3,7 +3,7 @@ import { sendTransactionServiceFactory } from '@crane/machines';
 import { ConnectionStore } from '@heavy-duty/wallet-adapter';
 import { ComponentStore } from '@ngrx/component-store';
 import { Transaction } from '@solana/web3.js';
-import { tap } from 'rxjs';
+import { concatMap, of, tap, withLatestFrom } from 'rxjs';
 import { StateFrom } from 'xstate';
 import { isNotNull, tapEffect } from '../utils';
 
@@ -27,14 +27,14 @@ const initialState: ViewModel = {
 export class SendTransactionButtonStore extends ComponentStore<ViewModel> {
   readonly service$ = this.select(({ service }) => service);
   readonly serviceState$ = this.select(({ serviceState }) => serviceState);
-  readonly transaction$ = this.select(({ transaction }) => transaction);
+  readonly transaction$ = this.select(
+    this.serviceState$,
+    (serviceState) => serviceState?.context.transaction ?? null
+  );
   readonly disabled$ = this.select(
     this.serviceState$,
     (serviceState) =>
-      serviceState === null ||
-      !serviceState.can({
-        type: 'sendTransaction',
-      })
+      serviceState === null || !serviceState.can('sendTransaction')
   );
 
   constructor(private readonly _connectionStore: ConnectionStore) {
@@ -43,19 +43,13 @@ export class SendTransactionButtonStore extends ComponentStore<ViewModel> {
     this.start(
       this.select(
         this._connectionStore.connection$.pipe(isNotNull),
-        this.transaction$.pipe(isNotNull),
-        (connection, transaction) =>
-          sendTransactionServiceFactory(connection, transaction, {
-            eager: false,
+        (connection) =>
+          sendTransactionServiceFactory(connection, {
+            fireAndForget: false,
           })
       )
     );
   }
-
-  readonly setTransaction = this.updater<Transaction>((state, transaction) => ({
-    ...state,
-    transaction,
-  }));
 
   readonly start = this.effect<ServiceType>(
     tapEffect((service) => {
@@ -70,15 +64,36 @@ export class SendTransactionButtonStore extends ComponentStore<ViewModel> {
     })
   );
 
-  readonly sendTransaction = this.effect<Option<ServiceType>>(
-    tap((service) => {
-      if (service === null) {
-        return;
-      }
+  readonly startSending = this.effect<Option<Transaction>>(
+    concatMap((transaction) =>
+      of(transaction).pipe(
+        withLatestFrom(this.service$),
+        tap(([transaction, service]) => {
+          if (service === null || transaction === null) {
+            return;
+          }
 
-      service.send({
-        type: 'sendTransaction',
-      });
-    })
+          service.send({
+            type: 'startSending',
+            value: transaction,
+          });
+        })
+      )
+    )
+  );
+
+  readonly sendTransaction = this.effect<void>(
+    concatMap(() =>
+      of(null).pipe(
+        withLatestFrom(this.service$),
+        tap(([, service]) => {
+          if (service === null) {
+            return;
+          }
+
+          service.send('sendTransaction');
+        })
+      )
+    )
   );
 }

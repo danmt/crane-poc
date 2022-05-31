@@ -34,6 +34,7 @@ export interface Typegen0 {
     | 'Getting slot'
     | 'Watching slot status'
     | 'Slot invalid'
-    | 'Done';
+    | 'Done'
+    | 'Idle';
   tags: never;
 }

@@ -1,6 +1,6 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, Input, Output } from '@angular/core';
 import { TransactionSignature } from '@solana/web3.js';
-import { filter, take, takeUntil } from 'rxjs';
+import { filter } from 'rxjs';
 import { isNotNull } from '../utils';
 import { ConfirmTransactionButtonStore } from './confirm-transaction-button.store';
 
@@ -17,34 +17,29 @@ import { ConfirmTransactionButtonStore } from './confirm-transaction-button.stor
   `,
   providers: [ConfirmTransactionButtonStore],
 })
-export class ConfirmTransactionButtonComponent implements OnInit {
+export class ConfirmTransactionButtonComponent {
   readonly disabled$ = this._confirmTransactionButtonStore.disabled$;
 
   @Input() set signature(value: TransactionSignature | null) {
     if (value !== null) {
-      this._confirmTransactionButtonStore.setSignature(value);
+      this._confirmTransactionButtonStore.startConfirming(value);
     }
   }
 
-  @Output() transactionConfirmed = new EventEmitter();
+  @Output() transactionConfirmed =
+    this._confirmTransactionButtonStore.serviceState$.pipe(
+      isNotNull,
+      filter(
+        (state) =>
+          state.matches('Transaction confirmed') && state.changed === true
+      )
+    );
 
   constructor(
     private readonly _confirmTransactionButtonStore: ConfirmTransactionButtonStore
   ) {}
 
-  ngOnInit() {
-    this._confirmTransactionButtonStore.serviceState$
-      .pipe(
-        isNotNull,
-        filter((state) => state.matches('Transaction confirmed')),
-        takeUntil(this._confirmTransactionButtonStore.destroy$)
-      )
-      .subscribe(() => this.transactionConfirmed.emit());
-  }
-
   onConfirmTransaction() {
-    this._confirmTransactionButtonStore.confirmTransaction(
-      this._confirmTransactionButtonStore.service$.pipe(take(1))
-    );
+    this._confirmTransactionButtonStore.confirmTransaction();
   }
 }

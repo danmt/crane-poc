@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatStepperModule } from '@angular/material/stepper';
+import { ReactiveComponentModule } from '@ngrx/component';
 import { FormlyModule } from '@ngx-formly/core';
 import { CreateTransactionSectionComponent } from './create-transaction-section.component';
 import { FormlyFieldStepperComponent } from './formly-stepper.type';
@@ -25,6 +26,7 @@ import { StopPropagationModule } from './stop-propagation.module';
     MatIconModule,
     MatInputModule,
     MatStepperModule,
+    ReactiveComponentModule,
     FormlyModule.forChild({
       types: [
         {
