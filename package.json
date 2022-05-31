@@ -23,6 +23,7 @@
     "@heavy-duty/anchor": "^0.24.2-1",
     "@heavy-duty/rxjs": "^0.1.0",
     "@heavy-duty/wallet-adapter": "^0.2.2",
+    "@ngrx/component": "^13.2.0",
     "@ngrx/component-store": "^13.2.0",
     "@ngx-formly/core": "^5.12.2",
     "@ngx-formly/material": "^5.12.2",

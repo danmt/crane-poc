@@ -17,7 +17,7 @@ type BuildTransactionEvent = EventType<'buildTransaction'>;
 type RpcRequestSuccess = EventType<'Rpc Request Machine.Request succeeded'> &
   EventData<{
     blockhash: string;
-    latestValidBlockHeight: number;
+    lastValidBlockHeight: number;
   }>;
 type RestartMachineEvent = EventType<'restartMachine'>;
 type SetFeePayerEvent = EventType<'setFeePayer'> & EventValue<PublicKey>;
@@ -52,7 +52,7 @@ export const createTransactionMachineFactory = (
       fireAndForget: true,
     });
 
-  /** @xstate-layout N4IgpgJg5mDOIC5QGEBOYCGAXMACAKqhgHawYDGWAlgPbG4CyFAFlcWAHQCSEANmAGJy6bGEIkylWsUSgADjVhVqdWSAAeiALQAWAMwBGDgHZjOnQE4AHACYLegGwGHDgDQgAntqvGbHC842xlaWDpZ6FgC+ke5omDgERKQUKvRM5Kzs3HyCagpKqWqaCFoArA5WHAAMhjpmpjqlOlUW7l4lLsYcQTq2DsaljtY60bEiCeLJUnSMLGycAGJgWBlsULi8orBYuABGvDTkANbMGLDMAgBKcuS4l2AAjgCucDvpmZz3z6+4sE-k5DAkEgeUUymkRUQBj0fgMzSs5QMg2MgWMbW0Ngcfj0VicVVMKPsDj0oxAcVEiQkKWks1WWXJ1GI6ywSUkqQEuyeVF4EEmbIhSBA+XBqkFxV0VkqzSqVT6Fiq0Kc6JKjUq0LspRsTWMeJGMTJ4zwfOpM3e8w4DLWuBZVOmxAEsGWSzAAAUMB4wKhQQUBaBigYgiZSlVehYKgS9HpSsqtMZI90kYYzGGLDrjKSGUbWSa0nN6eMrTapuyMBAIFxSCz-oVBcKa36oTYdP4LDotb4XM4HK1PNpiaUOI4wvYUU4hxnDZTizSzfn4oXs3aBOgALY0ABuYAr21Q1d9QrB9Y0UJhHGcpS7uOaBgsqZjTSMcYMthshgMpk1E-iWdtqVpHwtAsmWtRd2RoVAoBIKgAC8t0rXc7XgWtD33cVjAsDhymCONI0MWoYx8PwAixYJQnCKJ9UzKd+VNPNOEtYCixo+1vRFGQxW0AMjGIqobC1HwDBvOoYx0FxuhlQZSlsTUIgRL8KWNO1-3NRS-2Eb8IGXV4MFQLBZzAVij2KcwiNTCxXyjKxHBsaEY2sBwTBqGo9GaRpgwceSJlAmc6I4VSaXU0RNMM1DEAfDgHFlKwLEGBUdHfNxexKFyuhsKoHG1fE+JqCj9WIGgIDgNQqP82i6U4Hh+BC0UGxKC9mxRaKUVEmobJ7dotFTPRHL0GouwGaKKLGb9qJzZSsiWFZMnWTYcG2PYDmOU5zmq9jaq0GEugMFpMUabazE1GMeg4SUnGcaFTDhRpPJ-acyoAhjmW8mqDx9F7xX48S7HM7aAmsewYyxbEXGDTE9AGJEPMoydStzcq-Oe+hApwCBVshBBHCMfqoplNsYujJKtH6PxXzqQSsVla7oZG2Hxs4AAROgDOQt61uPBA9o4OofofBEnGEwm4W6m9BlJgZLKjG7RqU-S0Y4urzOqWp6gO5p2s4qpSgw4w+vVG8BksaJoiAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QGEBOYCGAXMACAKqhgHawYDGWAlgPbG4CyFAFlcWAHQCSEANmAGJy6bGEIkylWsUSgADjVhVqdWSAAeiALQAWAMwBGDgHZjOnQE4AHACYLegGwGHDgDQgAntqvGbHC842xlaWDpZ6FgC+ke5omDgERKQUKvRM5Kzs3HyCagpKqWqaCFoArA5WHAAMhjpmpjqlOlUW7l4lLsYcQTq2DsaljtY60bEiCeLJUnSMLGycAGJgWBlsULi8orBYuABGvDTkANbMGLDMAgBKcuS4l2AAjgCucDvpmZz3z6+4sE-k5DAkEgeUUymkRUQBj0fgMzSs5QMg2MgWMbW0Ngcfj0VicVVMKPsDj0oxAcVEiQkKWks1WWXJ1GI6ywSUkqQEuyeVF4EEmbIhSBA+XBqkFxV0VkqzSqVT6Fiq0Kc6JKjUq0LspRsTWMeJGMTJ4zwfOpM3e8w4DLWuBZVOmxAEsGWSzAAAUMB4wKhQQUBaBigYgiZSlVehYKgS9HpSsqtMZI90kYYzGGLDrjKSGUbWSa0nN6eMrTapuyMBAIFxSCz-oVBcKa36oTYdP4LDotb4XM4HK1PNpiaUOI4wvYUU4hxnDZTizSzfn4oXs3aBOgALY0ABuYAr21Q1d9QrB9Y0UJhHGcpS7uOaBgsqZjTSMcYMthshgMpk1E-iWdtqVpHwtAsmWtRd2RoVAoBIKgAC8t0rXc7XgWtD33cVjAsDhymCONI0MWoYx8PwAixYJQnCKJ9UzKd+VNPNOEtYCixo+1vRFGQxW0AMjGIqobC1HwDBvOoYx0FxuhlQZSlsTUIgRL8KWNO1-3NRS-2Eb8IGXV4MFQLBZzAVij2KcwiNTCxXyjKxHBsaEY2sBwTBqGo9GaRpgwceSJlAmc6I4VSaXU0RNMM1DEAfDgHFlKwLEGBUdHfNxexKFyuhsKoHG1fE+JqCj9WIGgIDgNQqP82i6U4Hh+BC0UGxKC9mxRaKUVEmobJ7dotFTPRHL0GouwGaKKLGb9qJzZSsiWFZMnWTYcG2PYDmOU5zmq9jaq0GEugMFpMUabazE1GMeg4SUnGcaFTDhRpPJ-acyoAhjmW8mqDx9F7xX48S7HM7aAmsewYyxbEXGDTE9AGJEPMoydStzcq-Oe+hApwCBVshBBHCMfqoplNsYujJKtH6PxXzqQSsVla7oZG2Hxs4AAROgDOQt61uPBA9o4OofofBEnGEwm4W6m9BlJgZLKjG7RqU-S0Y4urzOqWp6gO5p2s4qpSgw4wnJ1Hx9FKT9okiIA */
   return createMachine(
     {
       context: {
@@ -60,7 +60,7 @@ export const createTransactionMachineFactory = (
         latestBlockhash: undefined as
           | {
               blockhash: string;
-              latestValidBlockHeight: number;
+              lastValidBlockHeight: number;
             }
           | undefined,
         feePayer: undefined as PublicKey | undefined,

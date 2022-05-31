@@ -3,6 +3,7 @@ import { ConnectionStore, WalletStore } from '@heavy-duty/wallet-adapter';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
 import { Transaction, TransactionSignature } from '@solana/web3.js';
 import { BehaviorSubject } from 'rxjs';
+import { Option } from './utils';
 
 @Component({
   selector: 'crane-root',
@@ -16,6 +17,12 @@ import { BehaviorSubject } from 'rxjs';
       </main>
 
       <aside class="w-80">
+        <crane-blockhash-status-section
+          *ngrxLet="latestBlockhash$; let latestBlockhash"
+          [lastValidBlockHeight]="latestBlockhash?.lastValidBlockHeight ?? null"
+          (blockhashExpired)="onBlockhashExpired()"
+        ></crane-blockhash-status-section>
+
         <crane-sign-transaction-section
           [transaction]="transaction$ | async"
           [signer]="(authority$ | async) ?? null"
@@ -41,12 +48,19 @@ import { BehaviorSubject } from 'rxjs';
   providers: [ConnectionStore, WalletStore],
 })
 export class AppComponent implements OnInit {
-  private readonly _transaction = new BehaviorSubject<Transaction | null>(null);
-  private readonly _signature =
-    new BehaviorSubject<TransactionSignature | null>(null);
+  private readonly _transaction = new BehaviorSubject<Option<Transaction>>(
+    null
+  );
+  private readonly _latestBlockhash = new BehaviorSubject<
+    Option<{ blockhash: string; lastValidBlockHeight: number }>
+  >(null);
+  private readonly _signature = new BehaviorSubject<
+    Option<TransactionSignature>
+  >(null);
   readonly connection$ = this._connectionStore.connection$;
   readonly authority$ = this._walletStore.publicKey$;
   readonly transaction$ = this._transaction.asObservable();
+  readonly latestBlockhash$ = this._latestBlockhash.asObservable();
   readonly signature$ = this._signature.asObservable();
 
   constructor(
@@ -59,7 +73,17 @@ export class AppComponent implements OnInit {
     this._connectionStore.setEndpoint('http://localhost:8899');
   }
 
-  onTransactionCreated(transaction: Transaction) {
+  onTransactionCreated({
+    transaction,
+    latestBlockhash,
+  }: {
+    transaction: Option<Transaction>;
+    latestBlockhash: Option<{
+      blockhash: string;
+      lastValidBlockHeight: number;
+    }>;
+  }) {
+    this._latestBlockhash.next(latestBlockhash);
     this._transaction.next(transaction);
   }
 
@@ -73,5 +97,9 @@ export class AppComponent implements OnInit {
 
   onTransactionConfirmed() {
     console.log('confirmed');
+  }
+
+  onBlockhashExpired() {
+    console.log('blockhash expired');
   }
 }

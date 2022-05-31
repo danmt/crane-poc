@@ -3,7 +3,16 @@ import { createTransactionServiceFactory } from '@crane/machines';
 import { ConnectionStore } from '@heavy-duty/wallet-adapter';
 import { ComponentStore } from '@ngrx/component-store';
 import { PublicKey, TransactionInstruction } from '@solana/web3.js';
-import { combineLatest, filter, map, tap } from 'rxjs';
+import {
+  combineLatest,
+  concatMap,
+  filter,
+  map,
+  of,
+  pipe,
+  tap,
+  withLatestFrom,
+} from 'rxjs';
 import { StateFrom } from 'xstate';
 import { isNotNull, Option, tapEffect } from '../utils';
 
@@ -93,66 +102,28 @@ export class CreateTransactionSectionStore extends ComponentStore<ViewModel> {
   );
 
   readonly createTransaction = this.effect<{
-    service: Option<ServiceType>;
     feePayer: Option<PublicKey>;
     instructions: TransactionInstruction[];
   }>(
-    tap(({ service, feePayer, instructions }) => {
-      if (service === null || feePayer === null) {
-        return;
-      }
+    pipe(
+      concatMap(({ feePayer, instructions }) =>
+        of({ feePayer, instructions }).pipe(
+          withLatestFrom(this.service$),
+          tap(([{ feePayer, instructions }, service]) => {
+            if (service === null || feePayer === null) {
+              return;
+            }
 
-      service.send({
-        type: 'createTransaction',
-        value: {
-          feePayer,
-          instructions,
-        },
-      });
-    })
-  );
-
-  readonly buildTransaction = this.effect<Option<ServiceType>>(
-    tap((service) => {
-      if (service === null) {
-        return;
-      }
-
-      service.send({
-        type: 'buildTransaction',
-      });
-    })
-  );
-
-  readonly addInstruction = this.effect<{
-    service: Option<ServiceType>;
-    instruction: TransactionInstruction;
-  }>(
-    tap(({ service, instruction }) => {
-      if (service === null) {
-        return;
-      }
-
-      service.send({
-        type: 'addInstruction',
-        value: instruction,
-      });
-    })
-  );
-
-  readonly setFeePayer = this.effect<{
-    service: Option<ServiceType>;
-    feePayer: Option<PublicKey>;
-  }>(
-    tap(({ service, feePayer }) => {
-      if (service === null || feePayer === null) {
-        return;
-      }
-
-      service.send({
-        type: 'setFeePayer',
-        value: feePayer,
-      });
-    })
+            service.send({
+              type: 'createTransaction',
+              value: {
+                feePayer,
+                instructions,
+              },
+            });
+          })
+        )
+      )
+    )
   );
 }

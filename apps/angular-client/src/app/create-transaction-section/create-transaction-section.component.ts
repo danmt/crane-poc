@@ -1,7 +1,7 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, Output } from '@angular/core';
 import { WalletStore } from '@heavy-duty/wallet-adapter';
-import { Transaction, TransactionInstruction } from '@solana/web3.js';
-import { combineLatest, filter, of, take, takeUntil } from 'rxjs';
+import { TransactionInstruction } from '@solana/web3.js';
+import { combineLatest, filter, map, of } from 'rxjs';
 import { PluginsService } from '../plugins';
 import { isNotNull } from '../utils';
 import { CreateTransactionSectionStore } from './create-transaction-section.store';
@@ -42,12 +42,20 @@ import {
   `,
   providers: [TransactionFormService, CreateTransactionSectionStore],
 })
-export class CreateTransactionSectionComponent implements OnInit {
+export class CreateTransactionSectionComponent {
   readonly transactionForm$ = this._transactionFormService.transactionForm$;
   readonly disabled$ = this._createTransactionSectionStore.disabled$;
   readonly authority$ = this._walletStore.publicKey$;
 
-  @Output() transactionCreated = new EventEmitter<Transaction>();
+  @Output() transactionCreated =
+    this._createTransactionSectionStore.serviceState$.pipe(
+      isNotNull,
+      filter((state) => state?.matches('Transaction created') ?? false),
+      map(({ context: { transaction, latestBlockhash } }) => ({
+        transaction: transaction ?? null,
+        latestBlockhash: latestBlockhash ?? null,
+      }))
+    );
 
   constructor(
     private readonly _walletStore: WalletStore,
@@ -55,18 +63,6 @@ export class CreateTransactionSectionComponent implements OnInit {
     private readonly _transactionFormService: TransactionFormService,
     private readonly _createTransactionSectionStore: CreateTransactionSectionStore
   ) {}
-
-  ngOnInit() {
-    this._createTransactionSectionStore.serviceState$
-      .pipe(
-        isNotNull,
-        filter((state) => state.matches('Transaction created')),
-        takeUntil(this._createTransactionSectionStore.destroy$)
-      )
-      .subscribe(({ context }) =>
-        this.transactionCreated.emit(context.transaction)
-      );
-  }
 
   onBuildTransaction(model: TransactionFormModel) {
     const instructions = Object.values(model).reduce(
@@ -90,7 +86,6 @@ export class CreateTransactionSectionComponent implements OnInit {
 
     this._createTransactionSectionStore.createTransaction(
       combineLatest({
-        service: this._createTransactionSectionStore.service$.pipe(take(1)),
         feePayer: this._walletStore.publicKey$,
         instructions: of(instructions),
       })
