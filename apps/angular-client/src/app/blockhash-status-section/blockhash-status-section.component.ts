@@ -16,57 +16,37 @@ import { BlockhashStatusSectionStore } from './blockhash-status-section.store';
       >
         <header>
           <h2>Blockhash Status</h2>
-          <ng-container
-            *ngIf="percentage !== null && lastValidBlockHeight !== null"
-          >
-            <p *ngIf="percentage >= 50" class="text-xs text-green-500">
-              Blockhash is valid.
-              <button
-                (click)="onBlockhashRestarted()"
-                class="underline text-gray-300"
-                style="font-size: 0.5rem"
-              >
-                (Reload)
-              </button>
-            </p>
-            <p
-              *ngIf="percentage >= 20 && percentage < 50"
-              class="text-xs text-yellow-500"
-            >
-              Blockhash is expiring.
-              <button
-                (click)="onBlockhashRestarted()"
-                class="underline text-gray-300"
-                style="font-size: 0.5rem"
-              >
-                (Reload)
-              </button>
-            </p>
-            <p
-              *ngIf="percentage > 0 && percentage < 20"
-              class="text-xs text-orange-500"
-            >
-              Blockhash is about to expire.
-              <button
-                (click)="onBlockhashRestarted()"
-                class="underline text-gray-300"
-                style="font-size: 0.5rem"
-              >
-                (Reload)
-              </button>
-            </p>
-            <p *ngIf="percentage === 0" class="text-xs text-red-500">
-              Blockhash expired.
-              <button
-                (click)="onBlockhashRestarted()"
-                class="underline text-gray-300"
-                style="font-size: 0.5rem"
-              >
-                (Reload)
-              </button>
-            </p>
-          </ng-container>
 
+          <p
+            *ngIf="percentage !== null && lastValidBlockHeight !== null"
+            class="text-xs"
+            [ngClass]="{
+              'text-green-500': percentage >= 50,
+              'text-yellow-500': percentage >= 20 && percentage < 50,
+              'text-orange-500': percentage > 0 && percentage < 20,
+              'text-red-500': percentage === 0
+            }"
+          >
+            <ng-container *ngIf="percentage >= 50">
+              Blockhash is valid.
+            </ng-container>
+            <ng-container *ngIf="percentage >= 20 && percentage < 50">
+              Blockhash is expiring.
+            </ng-container>
+            <ng-container *ngIf="percentage > 0 && percentage < 20">
+              Blockhash is about to expire.
+            </ng-container>
+            <ng-container *ngIf="percentage === 0">
+              Blockhash expired.
+            </ng-container>
+            <button
+              (click)="onBlockhashRestarted()"
+              class="underline text-gray-400"
+              style="font-size: 0.5rem"
+            >
+              (Reload)
+            </button>
+          </p>
           <p
             *ngIf="lastValidBlockHeight === null"
             class="text-xs text-gray-400"
