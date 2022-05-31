@@ -1,5 +1,4 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { FormGroup } from '@angular/forms';
 import { WalletStore } from '@heavy-duty/wallet-adapter';
 import { Transaction, TransactionInstruction } from '@solana/web3.js';
 import { combineLatest, filter, of, take, takeUntil } from 'rxjs';
@@ -7,7 +6,10 @@ import { PluginsService } from '../plugins';
 import { isNotNull } from '../utils';
 import { CreateTransactionSectionStore } from './create-transaction-section.store';
 import { InstructionOption } from './instruction-autocomplete.component';
-import { TransactionForm, TransactionFormModel } from './transaction-form';
+import {
+  TransactionFormModel,
+  TransactionFormService,
+} from './transaction-form.service';
 
 @Component({
   selector: 'crane-create-transaction-section',
@@ -25,28 +27,23 @@ import { TransactionForm, TransactionFormModel } from './transaction-form';
         (instructionSelected)="onInstructionSelected($event)"
       ></crane-instruction-autocomplete>
 
-      <ng-container *ngIf="fields$ | async as fields">
-        <form
-          *ngIf="fields"
-          [formGroup]="form"
-          (ngSubmit)="onBuildTransaction(model)"
-        >
-          <formly-form
-            [form]="form"
-            [fields]="[fields]"
-            [model]="model"
-          ></formly-form>
-        </form>
-      </ng-container>
+      <form
+        *ngIf="transactionForm$ | async as transactionForm"
+        [formGroup]="transactionForm.form"
+        (ngSubmit)="onBuildTransaction(transactionForm.model)"
+      >
+        <formly-form
+          [form]="transactionForm.form"
+          [fields]="[transactionForm.fields]"
+          [model]="transactionForm.model"
+        ></formly-form>
+      </form>
     </section>
   `,
-  providers: [CreateTransactionSectionStore],
+  providers: [TransactionFormService, CreateTransactionSectionStore],
 })
 export class CreateTransactionSectionComponent implements OnInit {
-  private readonly _transactionForm = new TransactionForm();
-  form = new FormGroup({});
-  model: TransactionFormModel = {};
-  readonly fields$ = this._transactionForm.fields$;
+  readonly transactionForm$ = this._transactionFormService.transactionForm$;
   readonly disabled$ = this._createTransactionSectionStore.disabled$;
   readonly authority$ = this._walletStore.publicKey$;
 
@@ -55,6 +52,7 @@ export class CreateTransactionSectionComponent implements OnInit {
   constructor(
     private readonly _walletStore: WalletStore,
     private readonly _pluginsService: PluginsService,
+    private readonly _transactionFormService: TransactionFormService,
     private readonly _createTransactionSectionStore: CreateTransactionSectionStore
   ) {}
 
@@ -100,10 +98,10 @@ export class CreateTransactionSectionComponent implements OnInit {
   }
 
   onInstructionSelected(instructionOption: InstructionOption) {
-    this._transactionForm.addInstruction(instructionOption);
+    this._transactionFormService.addInstruction(instructionOption);
   }
 
   onRestartTransactionForm() {
-    this._transactionForm.restart();
+    this._transactionFormService.restart();
   }
 }

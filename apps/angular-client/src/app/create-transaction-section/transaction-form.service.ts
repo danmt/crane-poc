@@ -1,7 +1,14 @@
-import { FormControl } from '@angular/forms';
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { Injectable } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
 import { FormlyFieldConfig } from '@ngx-formly/core';
 import { capital } from 'case';
-import { BehaviorSubject } from 'rxjs';
+import {
+  BehaviorSubject,
+  combineLatest,
+  distinctUntilChanged,
+  map,
+} from 'rxjs';
 import { IdlInstruction, IdlInstructionArgument } from '../plugins';
 import { PublicKeyValidator } from '../utils';
 import { InstructionOption } from './instruction-autocomplete.component';
@@ -159,25 +166,109 @@ export type TransactionFormModel = {
   };
 };
 
-export class TransactionForm {
+@Injectable()
+export class TransactionFormService {
+  private readonly _instructions = new BehaviorSubject<InstructionOption[]>([]);
   private readonly _fields = new BehaviorSubject<FormlyFieldConfig>({
     type: 'stepper',
     fieldGroup: [],
   });
-  readonly fields$ = this._fields.asObservable();
+  private readonly _model = new BehaviorSubject<TransactionFormModel>({});
+  readonly transactionForm$ = combineLatest({
+    fields: this._fields.asObservable().pipe(distinctUntilChanged()),
+    model: this._model.asObservable().pipe(distinctUntilChanged()),
+  }).pipe(
+    map(({ fields, model }) => ({
+      fields,
+      model,
+      form: new FormGroup({}),
+    }))
+  );
 
   addInstruction({ instruction, name, namespace }: InstructionOption) {
     const fields = this._fields.getValue();
+    const instructions = this._instructions.getValue();
+    const model = this._model.getValue();
 
+    this._instructions.next([
+      ...instructions,
+      { instruction, name, namespace },
+    ]);
+    this._model.next({
+      ...model,
+      [`${Object.keys(model).length}`]: {
+        name,
+        namespace,
+        instruction: instruction.name,
+        args: {},
+        accounts: {},
+      },
+    });
     this._fields.next({
       ...fields,
-      fieldGroup: [
-        ...(fields.fieldGroup ?? []),
-        {
-          key: `${(fields.fieldGroup ?? []).length}`,
+      fieldGroup: [...instructions, { instruction, name, namespace }].map(
+        ({ namespace, name, instruction }, index) => ({
+          id: `${index}`,
+          key: `${index}`,
           fieldGroup: toFormlyFields(namespace, name, instruction),
-        },
-      ],
+        })
+      ),
+    });
+  }
+
+  removeInstruction(index: number) {
+    const fields = this._fields.getValue();
+    const model = this._model.getValue();
+    const instructions = this._instructions.getValue();
+
+    fields.fieldGroup?.splice(index, 1);
+
+    const newModel: TransactionFormModel = {};
+
+    fields.fieldGroup?.forEach((field, index) => {
+      newModel[`${index}`] = model[`${field.key}`];
+    });
+
+    instructions.splice(index, 1);
+
+    this._instructions.next(instructions);
+    this._model.next(newModel);
+    this._fields.next({
+      ...fields,
+      fieldGroup: instructions.map(
+        ({ namespace, name, instruction }, index) => ({
+          id: `${index}`,
+          key: `${index}`,
+          fieldGroup: toFormlyFields(namespace, name, instruction),
+        })
+      ),
+    });
+  }
+
+  move(event: CdkDragDrop<string[]>) {
+    const fields = this._fields.getValue();
+    const instructions = this._instructions.getValue();
+    const modelAsArray = Object.values(this._model.getValue());
+
+    moveItemInArray(instructions, event.previousIndex, event.currentIndex);
+    moveItemInArray(modelAsArray, event.previousIndex, event.currentIndex);
+
+    this._instructions.next(instructions);
+    this._model.next(
+      modelAsArray.reduce(
+        (model, entry, index) => ({ ...model, [`${index}`]: entry }),
+        {}
+      )
+    );
+    this._fields.next({
+      ...fields,
+      fieldGroup: instructions.map(
+        ({ namespace, name, instruction }, index) => ({
+          id: `${index}`,
+          key: `${index}`,
+          fieldGroup: toFormlyFields(namespace, name, instruction),
+        })
+      ),
     });
   }
 
@@ -186,5 +277,7 @@ export class TransactionForm {
       type: 'stepper',
       fieldGroup: [],
     });
+    this._instructions.next([]);
+    this._model.next({});
   }
 }
