@@ -6,7 +6,7 @@ This project intention is to explore a combination of XState, Angular and Solana
 
 Creating a transaction is a process that involves knowing about all the programs available, this has a dynamic nature and we're using IDLs and Anchor coders to achieve a UX for composability never seen before.
 
-To make this progressively better, we're using a plugin-based architecture that hopefully can grow into something move more re-usable.
+To make this progressively better, we're using a plugin-based architecture. As plugins come out, the application adapts to new behaviors.
 
 ### Plugin Setup
 
@@ -20,7 +20,7 @@ The main features are listed below:
 - Developers should be create a TransactionInstruction given a namespace, a program and a model.
 - Developers should be able to create a formly configuration given a namespace, a program and an instruction.
 
-Developers add all the desired plugins during app initialization, onInit the app component calls `PluginService.start()` which initializes all the plugins available. At this point there's a `PluginService.instructions` property that holds all the instructions available.
+Developers add all the desired plugins during app initialization, during initialization the app registers all plugins using `PluginService.registerAll(<your-plugins-list>)`. At this point there's a `PluginService.instructions` property that holds all the instructions available.
 
 Plugins implement the `PluginInterface` that looks like:
 
@@ -49,11 +49,9 @@ interface PluginServiceInterface {
 }
 ```
 
-Generating the Formly Fields Configuration is responsability of a method called `createInstructionFieldsConfiguration` that receives the arguments and accounts of the instruction and returns an object that matches the form configuration. In order to get the required information, the developer uses `getPlugin` in conjunction with `getInstruction`. With [ngx-formly](https://github.com/ngx-formly/ngx-formly) we generate a form ready to use.
+Generating the Formly Fields Configuration is responsability of a class called `TransactionForm`, it comes with an `addInstruction` method that generates a new entry in the `fieldGroup`. As the user selects instructions from the autocomplete, more steps are added to the `TransactionForm`. In order to get the required information, the developer uses `getPlugin` in conjunction with `getInstruction` and using [ngx-formly](https://github.com/ngx-formly/ngx-formly) we generate a form ready to use.
 
-Once an Instruction's form is submitted, the output model is transformed into a `TransactionInstruction` by using `getPlugin` and `getTransactionInstruction`.
-
-When the transaction is done the user clicks "Create Transaction", this fetches the latest blockhash and adds it to the transaction. After finished, the Signing phase starts.
+Once an Instruction's form is submitted, the output model is transformed into a list of `TransactionInstruction` by using `getPlugin` and `getTransactionInstruction`. This fetches the latest blockhash and adds it to the transaction. After finished, the Signing phase starts.
 
 ## Sign transaction
 
