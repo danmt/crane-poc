@@ -3,11 +3,12 @@
 export interface Typegen0 {
   '@@xstate/typegen': true;
   eventsCausingActions: {
-    'Save latest valid block height in context': 'getSlot';
-    'Save initial slot in context': 'Rpc Request Machine.Request succeeded';
+    'Save initial slot in context': 'get-slot.Request succeeded';
     'Update slot and gaps in context': 'updateSlot';
     'Mark as invalid in context': '';
+    'Save latest blockhash in context': 'get-latest-blockhash.Request succeeded';
     'Start get slot machine': 'getSlot';
+    'Start get latest blockhash machine': 'get-slot.Request succeeded';
   };
   internalEvents: {
     '': { type: '' };
@@ -23,7 +24,7 @@ export interface Typegen0 {
     delays: never;
   };
   eventsCausingServices: {
-    'Subscribe to slot changes': 'Rpc Request Machine.Request succeeded';
+    'Subscribe to slot changes': 'get-latest-blockhash.Request succeeded';
   };
   eventsCausingGuards: {
     'slot invalid': '';
@@ -35,6 +36,7 @@ export interface Typegen0 {
     | 'Watching slot status'
     | 'Slot invalid'
     | 'Done'
-    | 'Idle';
+    | 'Idle'
+    | 'Getting latest blockhash';
   tags: never;
 }

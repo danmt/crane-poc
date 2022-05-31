@@ -1,17 +1,22 @@
 import { Connection, SlotInfo } from '@solana/web3.js';
 import { ActorRefFrom, assign, createMachine, interpret, spawn } from 'xstate';
-import {
-  rpcRequestMachineFactory,
-  RpcRequestSuccess,
-} from './rpc-request.machine';
-import { EventType, EventValue } from './types';
+import { rpcRequestMachineFactory } from './rpc-request.machine';
+import { EventData, EventType, EventValue } from './types';
 
-type GetSlotEvent = EventType<'getSlot'> & EventValue<number>;
+type GetSlotEvent = EventType<'getSlot'>;
 
 type UpdateSlotEvent = EventType<'updateSlot'> & EventValue<SlotInfo>;
 
+type GetSlotSuccessEvent = EventType<'get-slot.Request succeeded'> &
+  EventData<number>;
+
+type GetLatestBlockhashSuccessEvent =
+  EventType<'get-latest-blockhash.Request succeeded'> &
+    EventData<{ blockhash: string; lastValidBlockHeight: number }>;
+
 type BlockhashStatusMachineEvent =
-  | RpcRequestSuccess<number>
+  | GetSlotSuccessEvent
+  | GetLatestBlockhashSuccessEvent
   | GetSlotEvent
   | UpdateSlotEvent;
 
@@ -23,12 +28,21 @@ export const blockhashStatusMachineFactory = (
     rpcRequestMachineFactory(() => connection.getSlot(), {
       eager: true,
       fireAndForget: true,
+      name: 'get-slot',
     });
 
-  /** @xstate-layout N4IgpgJg5mDOIC5QCEA2B7AxgawBYENZcACAZQBd9yBXWYgWX01wEsA7MAOgHExzz2UYrAzkAxACUADpmISwAR2pxyDJqw6d5SlcOqZMYSJESgp6WCwHo2pkAA9EAWgCsLgOycXAZhcAWbwBObwAOACZAgAZAvwAaEABPZwCARk4QqL8QrOCXSL9AgF9C+LQsPEISCipaNWZ2LgB1Knq2IRF0VVhKGlgxaikIKjBSUTtzS2tbJAdnFLDvThS-MIKQ7z8UyPcXMJD4pIQnCMDOMPdvADZ8sJTfILDi0owcAiIyHtrGVqaWjXbRMJPn1xhYrCwbHZHAgUi5LpxLn44Yi-O47oEfAdnJdLiFOJEcW4PDjLstLk8QGVXpUPjU6N8NFxRp1iOwAG74VAsCBiUGTCHTUDQq4uTg7EI+SIS7w7NzeLFHLKRTiBdzuSIytHeDUhFLkkqUl4Vd7VXp1RliGDkZnkPngyEzaFObx7ThXUnuS4eQKIwI+hVOXGeZFwjWXH0uGLFA1sdAQOB2KnGqrA80NHh8ARtYRjGYTe2C2ZHXaeVGBPWR7KhfaJZxw05IjZXFJo1YyilJt4pulpzTNcitAEs7p0u1TKFzHxukKRWd+HHuELh+YBvxrt2ZbKRBZXTYdo1d2lmhnpm2stgcrkQMcCicIMKzsVhXGqwJ7LWrANBU53LbLCLnBc+7lIeppfOo6YACI2GAN4OkKiCbGkqruAs5ZbG+-hflKCK7LCITrN4+H6s8IE0mB9IQZoACSECoLBeZguOjp1hEYoEqqBEakRiIBpc7h+F4hIXJxOJ6sB1ImqmJ4cHBhZOi4upeL4ATBOEUQxAGaphEJXoBLc+ThPqxRAA */
+  const getLatestBlockhashMachine = () =>
+    rpcRequestMachineFactory(() => connection.getLatestBlockhash(), {
+      eager: true,
+      fireAndForget: true,
+      name: 'get-latest-blockhash',
+    });
+
+  /** @xstate-layout N4IgpgJg5mDOIC5QCEA2B7AxgawBYENZcACAZQBd9yBXWYgWX01wEsA7MAOgHExzz2UYrAzkAxDHIBaEenKcASmACO1OOWHVMmMJEiJQAB3SwWA9GwMgAHoikAWABwBWTgHYAzB4BsAJl8AjACc-h6OHgA0IACeiAEe9pwADAF+Sd4B9pluzr4AvnlRaFh4hCQUVLQMTKwcnADqVMyCwqLClDSwYtSGEFRgpKJWxqbmlkg2dgGenPGO3t4eQc5h-s5uUbEIUgFJrh6pno72Sb7Hvm7eBUUYOAREZB1VjM11jeSvQrIasE9dwyYzCwLFZbAhMh5OD5nOs3CF7N43EjHJspoFkgFnCcAgFHI5fIi3NcQMU7mVHpU6C9alxBnJiOwAG74VAsCBiAGjYHjUBghJBTguS5JE6+MKOIJBVHgrzuXxOVL+U7BZzE0mlB4VTrVV5cXj8Fqofq-YgAI1uGtwEj4UiN5HUUnNJXuuEUKjUJtgWh0eggnKBIImYKkjiSyUuyyCjjcvj2QXi0o8SUcySSQW8TnsgWjwQ8aotLop2up7DA1vIdPI-rGoLsWUhQWTfhWgXssOlO3CnHsS0R0YS2OWBUKIDY6AgcCs6sLWueNVLPD4AjYXyGExGAZ5k22zhF7lOYU8S1bbY7CM4WNyCQzGUxSXS+ed5NnVPnbyatVX9N+lOr3Nr2wxt2mQIt4ziht4abgdKuwBHKCreOEobBPYQSPmSmp-DqNKcJWDJsMyrJ+uugI1kGiBZHBR5Jm48S5Iivgds43gYisITyh4Sq7FcI7Ts+WElnUAAiFhgH+ga8ogvbhosGZOMsTaJui97ps4uxBKh+I8TcT6YZS2ELgAkhAqBiSRXISduUjeBpnDxm4aaSgs9hwpEMRTHu3HhLebjHCh6GWkWc66ouBorsQdrqGaBZlOJW7Blibh2QezhORm6zSr4ywXmmCw5MssYZESvExXpxZvmZRikf+5GAbidnTI56YZq5HYEimPbpuEwqcbiw55EAA */
   return createMachine(
     {
       context: {
+        blockhash: undefined as string | undefined,
         lastValidBlockHeight: undefined as number | undefined,
         initialSlot: undefined as number | undefined,
         currentSlot: undefined as number | undefined,
@@ -38,13 +52,15 @@ export const blockhashStatusMachineFactory = (
         getSlotRef: undefined as
           | ActorRefFrom<ReturnType<typeof getSlotMachine>>
           | undefined,
+        getLatestBlockhashRef: undefined as
+          | ActorRefFrom<ReturnType<typeof getLatestBlockhashMachine>>
+          | undefined,
         isValid: undefined as boolean | undefined,
       },
       tsTypes: {} as import('./blockhash-status.machine.typegen').Typegen0,
       schema: { events: {} as BlockhashStatusMachineEvent },
       on: {
         getSlot: {
-          actions: 'Save latest valid block height in context',
           target: '.Getting slot',
         },
       },
@@ -53,9 +69,9 @@ export const blockhashStatusMachineFactory = (
         'Getting slot': {
           entry: 'Start get slot machine',
           on: {
-            'Rpc Request Machine.Request succeeded': {
+            'get-slot.Request succeeded': {
               actions: 'Save initial slot in context',
-              target: 'Watching slot status',
+              target: 'Getting latest blockhash',
             },
           },
         },
@@ -84,6 +100,15 @@ export const blockhashStatusMachineFactory = (
           type: 'final',
         },
         Idle: {},
+        'Getting latest blockhash': {
+          entry: 'Start get latest blockhash machine',
+          on: {
+            'get-latest-blockhash.Request succeeded': {
+              actions: 'Save latest blockhash in context',
+              target: 'Watching slot status',
+            },
+          },
+        },
       },
       id: 'Blockhash Status Machine',
     },
@@ -94,12 +119,6 @@ export const blockhashStatusMachineFactory = (
         }),
         'Save initial slot in context': assign({
           initialSlot: (_, event) => event.data,
-          initialGap: (context, event) =>
-            (context.lastValidBlockHeight ?? 0) - event.data,
-          percentage: (_) => 100,
-          isValid: (context, event) =>
-            context.lastValidBlockHeight !== undefined &&
-            event.data < context.lastValidBlockHeight,
         }),
         'Update slot and gaps in context': assign({
           currentSlot: (_, event) => event.value.slot,
@@ -111,8 +130,20 @@ export const blockhashStatusMachineFactory = (
                 (context.initialGap ?? 1)
             ),
         }),
-        'Save latest valid block height in context': assign({
-          lastValidBlockHeight: (_, event) => event.value,
+        'Save latest blockhash in context': assign({
+          blockhash: (_, event) => event.data.blockhash,
+          lastValidBlockHeight: (_, event) => event.data.lastValidBlockHeight,
+          initialGap: (context, event) =>
+            event.data.lastValidBlockHeight - (context.initialSlot ?? 0),
+          percentage: (_) => 100,
+          isValid: (context, event) =>
+            (context.initialSlot ?? 0) < event.data.lastValidBlockHeight,
+        }),
+        'Start get latest blockhash machine': assign({
+          getLatestBlockhashRef: (_) =>
+            spawn(getLatestBlockhashMachine(), {
+              name: 'get-latest-blockhash',
+            }),
         }),
         'Start get slot machine': assign({
           getSlotRef: (_) =>

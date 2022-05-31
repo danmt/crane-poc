@@ -2,7 +2,7 @@ import { Component, Input, Output } from '@angular/core';
 import { WalletStore } from '@heavy-duty/wallet-adapter';
 import { Keypair, PublicKey, Transaction } from '@solana/web3.js';
 import { filter, map } from 'rxjs';
-import { isNotNull } from '../utils';
+import { isNotNull, Option } from '../utils';
 import { SignTransactionSectionStore } from './sign-transaction-section.store';
 
 @Component({
@@ -62,8 +62,13 @@ export class SignTransactionSectionComponent {
   readonly disabled$ = this._signTransactionSectionStore.disabled$;
   readonly signatures$ = this._signTransactionSectionStore.signatures$;
 
-  @Input() set transaction(value: Transaction | null) {
-    if (value !== null && !value.verifySignatures()) {
+  @Input() set transaction(value: Option<Transaction>) {
+    if (
+      value !== null &&
+      value.feePayer !== undefined &&
+      value.recentBlockhash !== undefined &&
+      !value.verifySignatures()
+    ) {
       this._signTransactionSectionStore.startSigning(value);
     }
   }

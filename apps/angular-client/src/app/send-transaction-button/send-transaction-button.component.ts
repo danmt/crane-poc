@@ -27,7 +27,12 @@ export class SendTransactionButtonComponent {
   readonly disabled$ = this._sendTransactionButtonStore.disabled$;
 
   @Input() set transaction(value: Option<Transaction>) {
-    if (value !== null && value.verifySignatures()) {
+    if (
+      value !== null &&
+      value.feePayer !== undefined &&
+      value.recentBlockhash !== undefined &&
+      value.verifySignatures()
+    ) {
       this._sendTransactionButtonStore.startSending(value);
     }
   }

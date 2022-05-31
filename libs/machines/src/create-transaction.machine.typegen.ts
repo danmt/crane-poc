@@ -4,9 +4,7 @@ export interface Typegen0 {
   '@@xstate/typegen': true;
   eventsCausingActions: {
     'Save fee payer and instruction in context': 'createTransaction';
-    'Save latest blockhash in context': 'Rpc Request Machine.Request succeeded';
-    'Start get latest blockhash machine': 'createTransaction';
-    'Save transaction in context': 'Rpc Request Machine.Request succeeded';
+    'Save transaction in context': 'createTransaction';
   };
   internalEvents: {
     '': { type: '' };
@@ -24,10 +22,6 @@ export interface Typegen0 {
     'is fire and forget': '';
   };
   eventsCausingDelays: {};
-  matchesStates:
-    | 'Idle'
-    | 'Fetching latest blockhash'
-    | 'Transaction created'
-    | 'Done';
+  matchesStates: 'Idle' | 'Transaction created' | 'Done';
   tags: never;
 }

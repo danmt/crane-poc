@@ -1,11 +1,10 @@
 import { Injectable } from '@angular/core';
 import { createTransactionServiceFactory } from '@crane/machines';
-import { ConnectionStore } from '@heavy-duty/wallet-adapter';
 import { ComponentStore } from '@ngrx/component-store';
 import { PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { concatMap, of, tap, withLatestFrom } from 'rxjs';
 import { StateFrom } from 'xstate';
-import { isNotNull, Option, tapEffect } from '../utils';
+import { Option, tapEffect } from '../utils';
 
 type ServiceType = ReturnType<typeof createTransactionServiceFactory>;
 type StateType = StateFrom<ServiceType['machine']>;
@@ -49,17 +48,13 @@ export class CreateTransactionSectionStore extends ComponentStore<ViewModel> {
       })
   );
 
-  constructor(private readonly _connectionStore: ConnectionStore) {
+  constructor() {
     super(initialState);
 
     this.start(
-      this.select(
-        this._connectionStore.connection$.pipe(isNotNull),
-        (connection) =>
-          createTransactionServiceFactory(connection, {
-            fireAndForget: false,
-          })
-      )
+      createTransactionServiceFactory({
+        fireAndForget: false,
+      })
     );
   }
 

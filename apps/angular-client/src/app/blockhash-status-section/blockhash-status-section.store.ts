@@ -31,6 +31,10 @@ export class BlockhashStatusSectionStore extends ComponentStore<ViewModel> {
     this.serviceState$,
     (serviceState) => serviceState?.context.isValid ?? null
   );
+  readonly blockhash$ = this.select(
+    this.serviceState$,
+    (serviceState) => serviceState?.context.blockhash ?? null
+  );
   readonly lastValidBlockHeight$ = this.select(
     this.serviceState$,
     (serviceState) => serviceState?.context.lastValidBlockHeight ?? null
@@ -63,19 +67,16 @@ export class BlockhashStatusSectionStore extends ComponentStore<ViewModel> {
     })
   );
 
-  readonly getSlot = this.effect<Option<number>>(
-    concatMap((lastValidBlockHeight) =>
-      of(lastValidBlockHeight).pipe(
+  readonly getSlot = this.effect<void>(
+    concatMap(() =>
+      of(null).pipe(
         withLatestFrom(this.service$),
-        tap(([lastValidBlockHeight, service]) => {
-          if (service === null || lastValidBlockHeight === null) {
+        tap(([, service]) => {
+          if (service === null) {
             return;
           }
 
-          service.send({
-            type: 'getSlot',
-            value: lastValidBlockHeight,
-          });
+          service.send('getSlot');
         })
       )
     )

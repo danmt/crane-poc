@@ -6,6 +6,7 @@ export interface Typegen0 {
     'Save transaction in context': 'startSigning';
     'Sign using keypair': 'signTransactionWithKeypair';
     'Save signature in context': 'signTransactionWithWallet';
+    'Save transaction signed in context': '';
   };
   internalEvents: {
     '': { type: '' };

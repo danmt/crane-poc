@@ -126,4 +126,19 @@ export class SignTransactionSectionStore extends ComponentStore<ViewModel> {
       )
     )
   );
+
+  readonly restart = this.effect<void>(
+    concatMap(() =>
+      of(null).pipe(
+        withLatestFrom(this.service$),
+        tap(([, service]) => {
+          if (service === null) {
+            return;
+          }
+
+          service.send('restart');
+        })
+      )
+    )
+  );
 }

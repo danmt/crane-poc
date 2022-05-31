@@ -11,6 +11,8 @@ import { EventType, EventValue } from './types';
 export type StartSigningEvent = EventType<'startSigning'> &
   EventValue<Transaction>;
 
+export type RestartEvent = EventType<'restart'>;
+
 export type SignTransactionWithWalletEvent =
   EventType<'signTransactionWithWallet'> &
     EventValue<{ publicKey: PublicKey; signature: Buffer }>;
@@ -19,6 +21,7 @@ export type SignTransactionWithKeypairEvent =
   EventType<'signTransactionWithKeypair'> & EventValue<Keypair>;
 
 export type SignTransactionMachineEvent =
+  | RestartEvent
   | StartSigningEvent
   | SignTransactionWithWalletEvent
   | SignTransactionWithKeypairEvent;
@@ -32,7 +35,7 @@ export type SignTransactionMachineServices = {
 export const signTransactionMachineFactory = (config?: {
   fireAndForget: boolean;
 }) => {
-  /** @xstate-layout N4IgpgJg5mDOIC5QGUCWUB2ACALgJwEMNYCBjHVAe2wFsyALVDMAOgBVDiyLqtZ1mEAMSJQAB0r8eGUSAAeiAMyKArCwAcABgCMANkXqATCoCcqgCzmANCACeiALSHz6ltsO6T2gOwvDizxUAXyCbNExcThJyKloGJlZw7HwiaOkhfkwOVO5YgHVUHHoAaTBbMQJUPFkJKVjZBQQHTxZFc0UdDzMXXV11G3sETRZNExNvbxN1RW1tc29-TXV1ELCBSJyY3jpSRmYWJI2uLYwMgWzj6QKivIIAGzuwHBrJQvqkeUcVQ0MWb00VJMTPoAt5dIYBohhqNxpNprN5otlqsQIcUpdYlgdntEut0WlYiIPrU3tQGohdN4-ipNIZfOYlnT1NoTJCmtpFCYWCZjKoVFpRktzCi0VFctt4swMjgCHgcEkmFAXnUyR9Gk4vG4VCz-OZ+YZNL02U5DK4GTTNLSzP4FsKURhKBA4LJRZtpFjJawAJIQR7K0kyNWOcw8lgeFTg0yc8zgxTG4zmFjgzzOTQGFQzaYivFik4e3YJdi592ZQT+6TkhALJOWNPqPoGQyzfp2RwJpNdVPpzOKbMRfHiuIF-aujGq8SvCtBpp0qmBPrN9yaebG5utJuaMGeFzA0195LFzHYwsAEWoYHL71AjUbIwN6YN2nUZl0xrBbjaJhU828GZphn3I4CQlYcL2JScr0+Jpv10P4ASBEFKXBY1lC5ZMzH1FwATaEIQiAA */
+  /** @xstate-layout N4IgpgJg5mDOIC5QGUCWUB2ACALgJwEMNYCBjHVAe2wFsyALVDMAOgBVDiyLqtZ1mEAMSJQAB0r8eGUSAAeiAIwB2ZS0UAGAKwAWZSoBMANgCcJjTqMAaEAE9EAWkU6AHCwDMJoxpcv3OxRcDRUUAX1CbNExcThJyKloGJlYo7HwiOOkhfkwODO4EgHVUHHoAaTBbMQJUPFkJKQTZBQQnZQMPIPcDZSNVEwMTdxt7VvcjFj0tA09FLU0jSx1wyIEY-PjeOlJGZhZU9a5NjGyBPKPpYtLCggAbW7AceskSpqR5RyMDLRZlHXnnEZAiFfCNHONJspprN5hpFosViADukLgksNtdik1ijMgkRO8Gq9qM1HCENOo4d5FEZuu1lBphnZHMF3CwzBpvsZtC5-iZEcjYgUtklmNkcAQ8DhUkwoM9GsT3i0HJ4dOoTIpvir-BoNCZlGDWgZfCwZnp1YpujNdOEIiAMJQIHBZAKNtJ0SLWABJCAPOVEmSKxxaEw-dwWEw6XUzcxaA0OQaKE0aRQRsMGDR-cbKfnYwXHd07ZLsPNunKCP3SEkIfwefxaFwMmm9fSM0bK-5shZDUzzZa2l2o4WFvYD3EK8QvSuBsYN37+MxAoxaRbKVuk3QsFxeXXL1SaFxzHPRHFCxLD1gAEWoYArb1ALQMMw8BgCyjMPOpDP1TIQRpY0ymPoAhcel9BcI80hLNEMWSW9xw+VpFhMX5-hCSxgUCFw4x0MNO0pfw-BceYbVCIA */
   return createMachine(
     {
       context: {
@@ -48,13 +51,13 @@ export const signTransactionMachineFactory = (config?: {
         startSigning: {
           actions: 'Save transaction in context',
           target: '.Sign transaction',
-          internal: false,
         },
       },
       initial: 'Idle',
       states: {
         Idle: {},
         'Transaction signed': {
+          entry: 'Save transaction signed in context',
           always: {
             cond: 'is fire and forget',
             target: 'Done',
@@ -87,6 +90,23 @@ export const signTransactionMachineFactory = (config?: {
         'Save transaction in context': assign({
           transaction: (_, event) => event.value,
           signatures: (_) => [],
+        }),
+        'Save transaction signed in context': assign({
+          transaction: (context) => {
+            const transaction = new Transaction(context.transaction);
+
+            if (transaction === undefined) {
+              return undefined;
+            }
+
+            context.signatures.forEach(({ publicKey, signature }) => {
+              if (signature !== null) {
+                transaction.addSignature(publicKey, signature);
+              }
+            });
+
+            return transaction;
+          },
         }),
         'Save signature in context': assign({
           signatures: (context, event) => [

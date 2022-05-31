@@ -8,6 +8,7 @@ export type RpcRequestSuccess<T> =
 export const rpcRequestMachineFactory = <T>(
   request: () => Promise<T>,
   config?: {
+    name?: string;
     eager: boolean;
     fireAndForget: boolean;
   }
@@ -56,7 +57,9 @@ export const rpcRequestMachineFactory = <T>(
             onDone: [
               {
                 actions: sendParent((_, event) => ({
-                  type: 'Rpc Request Machine.Request succeeded',
+                  type: `${
+                    config?.name ?? 'Rpc Request Machine'
+                  }.Request succeeded`,
                   data: event.data,
                 })),
                 target: 'Request succeeded',

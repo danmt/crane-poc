@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ConnectionStore, WalletStore } from '@heavy-duty/wallet-adapter';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
 import { Transaction, TransactionSignature } from '@solana/web3.js';
 import { BehaviorSubject } from 'rxjs';
+import { BlockhashStatusSectionComponent } from './blockhash-status-section/blockhash-status-section.component';
 import { Option } from './utils';
 
 @Component({
@@ -17,11 +18,14 @@ import { Option } from './utils';
       </main>
 
       <aside class="w-80">
-        <crane-blockhash-status-section
-          *ngrxLet="latestBlockhash$; let latestBlockhash"
-          [lastValidBlockHeight]="latestBlockhash?.lastValidBlockHeight ?? null"
-          (blockhashExpired)="onBlockhashExpired()"
-        ></crane-blockhash-status-section>
+        <ng-container *ngrxLet="transaction$; let transaction">
+          <crane-blockhash-status-section
+            *ngrxLet="latestBlockhash$; let latestBlockhash"
+            (blockhashChanged)="onBlockhashChanged(transaction, $event)"
+            (blockhashExpired)="onBlockhashExpired(transaction)"
+            #blockhashStatusSection
+          ></crane-blockhash-status-section>
+        </ng-container>
 
         <crane-sign-transaction-section
           [transaction]="transaction$ | async"
@@ -47,6 +51,8 @@ import { Option } from './utils';
   providers: [ConnectionStore, WalletStore],
 })
 export class AppComponent implements OnInit {
+  @ViewChild('blockhashStatusSection')
+  blockhashStatusSection: Option<BlockhashStatusSectionComponent> = null;
   private readonly _transaction = new BehaviorSubject<Option<Transaction>>(
     null
   );
@@ -70,18 +76,9 @@ export class AppComponent implements OnInit {
     this._connectionStore.setEndpoint('http://localhost:8899');
   }
 
-  onTransactionCreated({
-    transaction,
-    latestBlockhash,
-  }: {
-    transaction: Option<Transaction>;
-    latestBlockhash: Option<{
-      blockhash: string;
-      lastValidBlockHeight: number;
-    }>;
-  }) {
-    this._latestBlockhash.next(latestBlockhash);
+  onTransactionCreated(transaction: Option<Transaction>) {
     this._transaction.next(transaction);
+    this.blockhashStatusSection?.loadBlockhash();
   }
 
   onTransactionSignDone(transaction: Option<Transaction>) {
@@ -96,7 +93,28 @@ export class AppComponent implements OnInit {
     console.log('confirmed');
   }
 
-  onBlockhashExpired() {
-    console.log('blockhash expired');
+  onBlockhashChanged(transaction: Option<Transaction>, blockhash: string) {
+    if (transaction !== null) {
+      this._transaction.next(
+        new Transaction({
+          ...transaction,
+          recentBlockhash: blockhash,
+        })
+      );
+    }
+  }
+
+  onBlockhashExpired(transaction: Option<Transaction>) {
+    if (transaction !== null) {
+      this._transaction.next(
+        new Transaction({
+          ...transaction,
+          signatures: transaction.signatures.map(({ publicKey }) => ({
+            publicKey,
+            signature: null,
+          })),
+        })
+      );
+    }
   }
 }

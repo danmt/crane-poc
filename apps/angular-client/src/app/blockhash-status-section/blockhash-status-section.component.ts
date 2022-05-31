@@ -1,6 +1,6 @@
-import { Component, Input, Output } from '@angular/core';
+import { Component, Output } from '@angular/core';
 import { filter } from 'rxjs';
-import { isNotNull, Option } from '../utils';
+import { isNotNull } from '../utils';
 import { BlockhashStatusSectionStore } from './blockhash-status-section.store';
 
 @Component({
@@ -21,21 +21,49 @@ import { BlockhashStatusSectionStore } from './blockhash-status-section.store';
           >
             <p *ngIf="percentage >= 50" class="text-xs text-green-500">
               Blockhash is valid.
+              <button
+                (click)="onBlockhashRestarted()"
+                class="underline text-gray-300"
+                style="font-size: 0.5rem"
+              >
+                (Reload)
+              </button>
             </p>
             <p
               *ngIf="percentage >= 20 && percentage < 50"
               class="text-xs text-yellow-500"
             >
               Blockhash is expiring.
+              <button
+                (click)="onBlockhashRestarted()"
+                class="underline text-gray-300"
+                style="font-size: 0.5rem"
+              >
+                (Reload)
+              </button>
             </p>
             <p
               *ngIf="percentage > 0 && percentage < 20"
               class="text-xs text-orange-500"
             >
               Blockhash is about to expire.
+              <button
+                (click)="onBlockhashRestarted()"
+                class="underline text-gray-300"
+                style="font-size: 0.5rem"
+              >
+                (Reload)
+              </button>
             </p>
             <p *ngIf="percentage === 0" class="text-xs text-red-500">
               Blockhash expired.
+              <button
+                (click)="onBlockhashRestarted()"
+                class="underline text-gray-300"
+                style="font-size: 0.5rem"
+              >
+                (Reload)
+              </button>
             </p>
           </ng-container>
 
@@ -59,6 +87,7 @@ import { BlockhashStatusSectionStore } from './blockhash-status-section.store';
             [value]="percentage"
           >
           </mat-progress-spinner>
+
           <mat-icon *ngIf="percentage === 0" class="text-red-500 leading-none">
             cancel
           </mat-icon>
@@ -74,18 +103,23 @@ export class BlockhashStatusSectionComponent {
   readonly lastValidBlockHeight$ =
     this._blockhashStatusSectionStore.lastValidBlockHeight$;
 
-  @Input() set lastValidBlockHeight(value: Option<number>) {
-    if (value !== null) {
-      this._blockhashStatusSectionStore.getSlot(value);
-    }
-  }
   @Output() blockhashExpired =
     this._blockhashStatusSectionStore.serviceState$.pipe(
       isNotNull,
       filter((state) => state.matches('Slot invalid') && state.changed === true)
     );
+  @Output() blockhashChanged =
+    this._blockhashStatusSectionStore.blockhash$.pipe(isNotNull);
 
   constructor(
     private readonly _blockhashStatusSectionStore: BlockhashStatusSectionStore
   ) {}
+
+  loadBlockhash() {
+    this._blockhashStatusSectionStore.getSlot();
+  }
+
+  onBlockhashRestarted() {
+    this.loadBlockhash();
+  }
 }

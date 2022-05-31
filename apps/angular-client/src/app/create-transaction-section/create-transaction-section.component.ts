@@ -53,10 +53,7 @@ export class CreateTransactionSectionComponent {
     this._createTransactionSectionStore.serviceState$.pipe(
       isNotNull,
       filter((state) => state?.matches('Transaction created') ?? false),
-      map(({ context: { transaction, latestBlockhash } }) => ({
-        transaction: transaction ?? null,
-        latestBlockhash: latestBlockhash ?? null,
-      }))
+      map(({ context: { transaction } }) => transaction ?? null)
     );
 
   constructor(
